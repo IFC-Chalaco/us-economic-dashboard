@@ -1,7 +1,7 @@
 {
   "source": "U.S. Bureau of Labor Statistics Public Data API",
   "source_url": "https://www.bls.gov/developers/",
-  "generated_at": "2026-06-13T16:48:49.646383+00:00",
+  "generated_at": "2026-06-13T17:30:44.361580+00:00",
   "series": [
     {
       "id": "CUSR0000SA0",
@@ -14531,5 +14531,48 @@
         }
       ]
     }
-  ]
+  ],
+  "expectations": {
+    "unemployment": {
+      "survey_date": "2026Q2",
+      "frequency": "Quarterly",
+      "variable": "Civilian unemployment rate",
+      "unit": "Percent",
+      "range_definition": "25th to 75th percentile of professional forecasts",
+      "source": "Federal Reserve Bank of Philadelphia Survey of Professional Forecasters",
+      "source_url": "https://www.philadelphiafed.org/surveys-and-data/real-time-data-research/survey-of-professional-forecasters",
+      "observations": [
+        {
+          "date": "2026-04-01",
+          "expected_mean": 4.3677,
+          "p25": 4.3,
+          "p75": 4.4121
+        },
+        {
+          "date": "2026-07-01",
+          "expected_mean": 4.4345,
+          "p25": 4.3136,
+          "p75": 4.5229
+        },
+        {
+          "date": "2026-10-01",
+          "expected_mean": 4.4677,
+          "p25": 4.3488,
+          "p75": 4.5759
+        },
+        {
+          "date": "2027-01-01",
+          "expected_mean": 4.4632,
+          "p25": 4.4,
+          "p75": 4.6
+        },
+        {
+          "date": "2027-04-01",
+          "expected_mean": 4.4483,
+          "p25": 4.3,
+          "p75": 4.6
+        }
+      ]
+    }
+  }
 }

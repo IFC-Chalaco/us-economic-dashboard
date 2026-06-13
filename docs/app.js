@@ -177,12 +177,66 @@ function renderCategories() {
 }
 
 function renderLabor() {
-  const labor = seriesByKind("labor").filter((item) => item.id !== "CES0000000001");
-  const traces = labor.map((item, index) => {
-    const rows = filteredObservations(item, "value");
-    return { x: rows.map((row) => row.date), y: rows.map((row) => row.value), type: "scatter", mode: "lines", name: item.name, line: { width: 3, color: COLORS[index + 1] } };
+  const unemployment = state.data.series.find((item) => item.id === "LNS14000000");
+  const actual = filteredObservations(unemployment, "value");
+  const expectations = state.data.expectations?.unemployment;
+  const forecast = expectations?.observations || [];
+  const traces = [];
+
+  if (forecast.length) {
+    traces.push(
+      {
+        x: forecast.map((row) => row.date),
+        y: forecast.map((row) => row.p25),
+        type: "scatter",
+        mode: "lines",
+        line: { color: "rgba(99,112,131,0)", width: 0 },
+        hoverinfo: "skip",
+        showlegend: false,
+        name: "Expected range lower bound",
+      },
+      {
+        x: forecast.map((row) => row.date),
+        y: forecast.map((row) => row.p75),
+        type: "scatter",
+        mode: "lines",
+        line: { color: "rgba(99,112,131,.35)", width: 1 },
+        fill: "tonexty",
+        fillcolor: "rgba(99,112,131,.18)",
+        name: "Expected range (25th-75th percentile)",
+        customdata: forecast.map((row) => [row.p25, row.p75]),
+        hovertemplate: "%{x|%b %Y}<br>Expected range: %{customdata[0]:.1f}%-%{customdata[1]:.1f}%<extra></extra>",
+      },
+      {
+        x: forecast.map((row) => row.date),
+        y: forecast.map((row) => row.expected_mean),
+        type: "scatter",
+        mode: "lines+markers",
+        line: { color: "#637083", width: 2, dash: "dot" },
+        marker: { size: 7, color: "#637083" },
+        name: "Expected mean",
+        hovertemplate: "%{x|%b %Y}<br>Expected mean: %{y:.1f}%<extra></extra>",
+      }
+    );
+  }
+
+  traces.push({
+    x: actual.map((row) => row.date),
+    y: actual.map((row) => row.value),
+    type: "scatter",
+    mode: "lines+markers",
+    line: { width: 3, color: "#0f766e" },
+    marker: { size: 5, color: "#0f766e" },
+    name: "Actual unemployment rate",
+    hovertemplate: "%{x|%b %Y}<br>Actual: %{y:.1f}%<extra></extra>",
   });
-  Plotly.react("labor-chart", traces, plotLayout("Percent"), { responsive: true, displaylogo: false });
+
+  const layout = plotLayout("Unemployment rate (%)");
+  layout.legend = { orientation: "h", y: 1.18 };
+  Plotly.react("labor-chart", traces, layout, { responsive: true, displaylogo: false });
+  $("labor-note").textContent = forecast.length
+    ? `Green is monthly BLS actual. Shading is the ${expectations.range_definition.toLowerCase()} from the ${expectations.survey_date} SPF.`
+    : "Green is the monthly BLS actual unemployment rate.";
 }
 
 function render() {

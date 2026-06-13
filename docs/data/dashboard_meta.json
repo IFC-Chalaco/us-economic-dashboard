@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-13T16:48:49.646383+00:00",
+  "generated_at": "2026-06-13T17:30:44.361580+00:00",
   "data_changed": true,
   "latest_observations": {
     "CUSR0000SA0": "2026-05-01",
@@ -26,5 +26,6 @@
   "source": "U.S. Bureau of Labor Statistics Public Data API",
   "source_url": "https://www.bls.gov/developers/",
   "cpi_release_schedule": "https://www.bls.gov/schedule/news_release/cpi.htm",
-  "employment_release_schedule": "https://www.bls.gov/schedule/news_release/empsit.htm"
+  "employment_release_schedule": "https://www.bls.gov/schedule/news_release/empsit.htm",
+  "expectations_source": "https://www.philadelphiafed.org/surveys-and-data/real-time-data-research/survey-of-professional-forecasters"
 }

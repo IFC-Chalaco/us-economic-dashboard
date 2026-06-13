@@ -10,8 +10,11 @@ import ssl
 import sys
 import urllib.error
 import urllib.request
+from io import BytesIO
 from datetime import datetime, timezone
 from pathlib import Path
+from xml.etree import ElementTree
+from zipfile import ZipFile
 
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG_PATH = ROOT / "config" / "series.json"
@@ -19,12 +22,44 @@ SITE_DIR = Path(os.environ.get("ECONOMIC_DASHBOARD_DOCS", ROOT / "docs"))
 OUTPUT_PATH = SITE_DIR / "data" / "economic_data.json"
 META_PATH = SITE_DIR / "data" / "dashboard_meta.json"
 API_URL = "https://api.bls.gov/publicAPI/v2/timeseries/data/"
+SPF_MEAN_URL = (
+    "https://www.philadelphiafed.org/-/media/FRBP/Assets/Surveys-And-Data/"
+    "survey-of-professional-forecasters/historical-data/meanLevel.xlsx"
+)
+SPF_DISPERSION_URL = (
+    "https://www.philadelphiafed.org/-/media/FRBP/Assets/Surveys-And-Data/"
+    "survey-of-professional-forecasters/historical-data/Dispersion_1.xlsx"
+)
+SPF_SOURCE_URL = (
+    "https://www.philadelphiafed.org/surveys-and-data/"
+    "real-time-data-research/survey-of-professional-forecasters"
+)
+XLSX_NS = {"m": "http://schemas.openxmlformats.org/spreadsheetml/2006/main"}
+REL_NS = {
+    "r": "http://schemas.openxmlformats.org/package/2006/relationships",
+    "od": "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
+}
 
 
 def load_json(path: Path, fallback):
     if not path.exists():
         return fallback
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def ssl_context():
+    if os.environ.get("BLS_INSECURE_SKIP_VERIFY") == "1":
+        return ssl._create_unverified_context()
+    return None
+
+
+def request_bytes(url: str) -> bytes:
+    request = urllib.request.Request(url, headers={"User-Agent": "us-economic-dashboard/1.0"})
+    try:
+        with urllib.request.urlopen(request, timeout=60, context=ssl_context()) as response:
+            return response.read()
+    except (urllib.error.URLError, TimeoutError) as exc:
+        raise RuntimeError(f"Official data request failed for {url}: {exc}") from exc
 
 
 def request_series(series_ids: list[str], start_year: int, end_year: int) -> dict:
@@ -45,11 +80,8 @@ def request_series(series_ids: list[str], start_year: int, end_year: int) -> dic
         headers={"Content-Type": "application/json", "User-Agent": "us-economic-dashboard/1.0"},
         method="POST",
     )
-    ssl_context = None
-    if os.environ.get("BLS_INSECURE_SKIP_VERIFY") == "1":
-        ssl_context = ssl._create_unverified_context()
     try:
-        with urllib.request.urlopen(request, timeout=60, context=ssl_context) as response:
+        with urllib.request.urlopen(request, timeout=60, context=ssl_context()) as response:
             body = json.load(response)
     except (urllib.error.URLError, TimeoutError) as exc:
         raise RuntimeError(f"BLS API request failed: {exc}") from exc
@@ -57,6 +89,116 @@ def request_series(series_ids: list[str], start_year: int, end_year: int) -> dic
     if body.get("status") != "REQUEST_SUCCEEDED":
         raise RuntimeError(f"BLS API error: {body.get('message', 'unknown error')}")
     return {entry["seriesID"]: entry for entry in body["Results"]["series"]}
+
+
+def xlsx_sheet_rows(workbook_bytes: bytes, sheet_name: str) -> list[dict]:
+    with ZipFile(BytesIO(workbook_bytes)) as archive:
+        workbook = ElementTree.fromstring(archive.read("xl/workbook.xml"))
+        relationships = ElementTree.fromstring(
+            archive.read("xl/_rels/workbook.xml.rels")
+        )
+        targets = {
+            item.get("Id"): item.get("Target")
+            for item in relationships.findall("r:Relationship", REL_NS)
+        }
+        sheet_target = None
+        for sheet in workbook.findall(".//m:sheets/m:sheet", XLSX_NS):
+            if sheet.get("name") == sheet_name:
+                sheet_target = targets[sheet.get(f"{{{REL_NS['od']}}}id")]
+                break
+        if not sheet_target:
+            raise RuntimeError(f"SPF workbook is missing the {sheet_name} sheet")
+
+        shared_strings = []
+        if "xl/sharedStrings.xml" in archive.namelist():
+            shared_root = ElementTree.fromstring(archive.read("xl/sharedStrings.xml"))
+            shared_strings = [
+                "".join(node.text or "" for node in item.iterfind(".//m:t", XLSX_NS))
+                for item in shared_root.findall("m:si", XLSX_NS)
+            ]
+
+        sheet_path = f"xl/{sheet_target.lstrip('/')}"
+        sheet_root = ElementTree.fromstring(archive.read(sheet_path))
+        rows = []
+        for row in sheet_root.findall(".//m:sheetData/m:row", XLSX_NS):
+            values = {}
+            for cell in row.findall("m:c", XLSX_NS):
+                ref = cell.get("r", "")
+                column = "".join(char for char in ref if char.isalpha())
+                value_node = cell.find("m:v", XLSX_NS)
+                value = "" if value_node is None else value_node.text
+                if cell.get("t") == "s" and value:
+                    value = shared_strings[int(value)]
+                values[column] = value
+            rows.append(values)
+    return rows
+
+
+def numeric(value):
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def shift_quarter(year: int, quarter: int, offset: int) -> tuple[int, int]:
+    zero_based = year * 4 + quarter - 1 + offset
+    return zero_based // 4, zero_based % 4 + 1
+
+
+def quarter_date(year: int, quarter: int) -> str:
+    return f"{year}-{(quarter - 1) * 3 + 1:02d}-01"
+
+
+def load_spf_expectations() -> dict:
+    mean_rows = xlsx_sheet_rows(request_bytes(SPF_MEAN_URL), "UNEMP")
+    dispersion_rows = xlsx_sheet_rows(request_bytes(SPF_DISPERSION_URL), "UNEMP")
+    mean = next((row for row in reversed(mean_rows) if numeric(row.get("A"))), None)
+    dispersion = next(
+        (row for row in reversed(dispersion_rows) if "Q" in row.get("A", "")), None
+    )
+    if not mean or not dispersion:
+        raise RuntimeError("SPF workbooks contain no current unemployment forecast")
+
+    year = int(numeric(mean["A"]))
+    quarter = int(numeric(mean["B"]))
+    survey_date = f"{year}Q{quarter}"
+    if dispersion["A"] != survey_date:
+        raise RuntimeError(
+            f"SPF workbook dates do not match: {survey_date} vs {dispersion['A']}"
+        )
+
+    mean_columns = ["D", "E", "F", "G", "H"]
+    percentile_columns = [("B", "C"), ("E", "F"), ("H", "I"), ("K", "L"), ("N", "O")]
+    observations = []
+    for horizon, (mean_column, percentile_pair) in enumerate(
+        zip(mean_columns, percentile_columns)
+    ):
+        forecast_year, forecast_quarter = shift_quarter(year, quarter, horizon)
+        expected = numeric(mean.get(mean_column))
+        p25 = numeric(dispersion.get(percentile_pair[0]))
+        p75 = numeric(dispersion.get(percentile_pair[1]))
+        if expected is None or p25 is None or p75 is None:
+            continue
+        observations.append(
+            {
+                "date": quarter_date(forecast_year, forecast_quarter),
+                "expected_mean": round(expected, 4),
+                "p25": round(p25, 4),
+                "p75": round(p75, 4),
+            }
+        )
+
+    return {
+        "survey_date": survey_date,
+        "frequency": "Quarterly",
+        "variable": "Civilian unemployment rate",
+        "unit": "Percent",
+        "range_definition": "25th to 75th percentile of professional forecasts",
+        "source": "Federal Reserve Bank of Philadelphia Survey of Professional Forecasters",
+        "source_url": SPF_SOURCE_URL,
+        "observations": observations,
+    }
 
 
 def period_date(year: str, period: str) -> str | None:
@@ -137,6 +279,7 @@ def main() -> int:
         "source_url": "https://www.bls.gov/developers/",
         "generated_at": now.isoformat(),
         "series": series,
+        "expectations": {"unemployment": load_spf_expectations()},
     }
     previous = load_json(OUTPUT_PATH, {})
     changed = stable_hash(previous) != stable_hash(payload)
@@ -158,6 +301,7 @@ def main() -> int:
         "source_url": payload["source_url"],
         "cpi_release_schedule": "https://www.bls.gov/schedule/news_release/cpi.htm",
         "employment_release_schedule": "https://www.bls.gov/schedule/news_release/empsit.htm",
+        "expectations_source": SPF_SOURCE_URL,
     }
     if changed or not META_PATH.exists():
         META_PATH.write_text(json.dumps(meta, indent=2) + "\n", encoding="utf-8")

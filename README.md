@@ -13,6 +13,7 @@ Published from its own GitHub repository:
 - Headline and core CPI, including monthly and 12-month changes
 - Detailed CPI categories and user-selectable category groups
 - Unemployment rate, labor-force participation, and payroll employment
+- Philadelphia Fed professional-forecaster expectation ranges for unemployment
 - Official release dates, observation periods, adjustment status, and source links
 
 ## Refresh architecture
@@ -35,5 +36,6 @@ Open `http://localhost:8000/`.
 - [BLS Public Data API](https://www.bls.gov/developers/)
 - [Consumer Price Index release schedule](https://www.bls.gov/schedule/news_release/cpi.htm)
 - [Employment Situation release schedule](https://www.bls.gov/schedule/news_release/empsit.htm)
+- [Philadelphia Fed Survey of Professional Forecasters](https://www.philadelphiafed.org/surveys-and-data/real-time-data-research/survey-of-professional-forecasters)
 
 All displayed values are derived from official BLS series. See `config/series.json` for the exact series catalog.

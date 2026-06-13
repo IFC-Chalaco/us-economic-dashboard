@@ -8,9 +8,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,600;6..72,700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="./styles.css?v=1" />
+  <link rel="stylesheet" href="./styles.css?v=2" />
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="./app.js?v=1"></script>
+  <script defer src="./app.js?v=2"></script>
 </head>
 <body>
   <main class="shell">
@@ -70,6 +70,7 @@
       </article>
       <article class="card chart-card">
         <div class="section-heading"><div><p class="eyebrow">Labor pulse</p><h2>Employment indicators</h2></div></div>
+        <p id="labor-note" class="chart-explainer">Green is the monthly BLS actual unemployment rate.</p>
         <div id="labor-chart" class="chart" aria-label="Labor-market chart"></div>
       </article>
     </section>
@@ -81,6 +82,7 @@
         <a href="https://www.bls.gov/schedule/news_release/cpi.htm" target="_blank" rel="noreferrer">CPI release calendar</a>
         <a href="https://www.bls.gov/schedule/news_release/empsit.htm" target="_blank" rel="noreferrer">Employment release calendar</a>
         <a href="https://www.bls.gov/developers/" target="_blank" rel="noreferrer">BLS Public Data API</a>
+        <a href="https://www.philadelphiafed.org/surveys-and-data/real-time-data-research/survey-of-professional-forecasters" target="_blank" rel="noreferrer">Philadelphia Fed expectations</a>
       </div>
     </section>
   </main>
