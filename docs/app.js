@@ -159,7 +159,7 @@ function trendValueLabel(value, measure, selected) {
 
 function trendDelta(row, previousRow, measure, selected) {
   if (!previousRow || !Number.isFinite(row[measure]) || !Number.isFinite(previousRow[measure])) {
-    return { value: null, label: "No prior-month comparison", direction: "neutral" };
+    return { value: null, label: "No prior-month comparison", signal: "stable", insight: "Insufficient history to assess direction." };
   }
 
   let value;
@@ -176,14 +176,34 @@ function trendDelta(row, previousRow, measure, selected) {
   }
 
   if (!Number.isFinite(value)) {
-    return { value: null, label: "No prior-month comparison", direction: "neutral" };
+    return { value: null, label: "No prior-month comparison", signal: "stable", insight: "Insufficient history to assess direction." };
   }
-  const direction = value > 0 ? "up" : value < 0 ? "down" : "neutral";
+
+  const isInflation = selected.kind === "cpi";
+  const lowerIsFavorable = isInflation || selected.id === "LNS14000000";
+  const higherIsFavorable = selected.id === "LNS11300000" || selected.id === "CES0000000001";
+  let signal = "stable";
+  if (value !== 0) {
+    if (lowerIsFavorable) signal = value < 0 ? "favorable" : "adverse";
+    else if (higherIsFavorable) signal = value > 0 ? "favorable" : "adverse";
+    else signal = value > 0 ? "favorable" : "adverse";
+  }
+
   const arrow = value > 0 ? "▲" : value < 0 ? "▼" : "●";
   const digits = suffix === "K" ? 0 : 2;
+  let insight = "No change from the previous month.";
+  if (isInflation && value < 0) insight = "Inflation momentum eased from the previous month.";
+  if (isInflation && value > 0) insight = "Inflation momentum increased from the previous month.";
+  if (selected.id === "LNS14000000" && value < 0) insight = "The unemployment rate improved from the previous month.";
+  if (selected.id === "LNS14000000" && value > 0) insight = "The unemployment rate weakened from the previous month.";
+  if (selected.id === "LNS11300000" && value < 0) insight = "Labor-force participation declined from the previous month.";
+  if (selected.id === "LNS11300000" && value > 0) insight = "Labor-force participation improved from the previous month.";
+  if (selected.id === "CES0000000001" && value < 0) insight = "Payroll growth slowed from the previous month.";
+  if (selected.id === "CES0000000001" && value > 0) insight = "Payroll growth accelerated from the previous month.";
   return {
     value,
-    direction,
+    signal,
+    insight,
     label: `${arrow} ${value >= 0 ? "+" : ""}${value.toFixed(digits)}${suffix} vs previous month`,
   };
 }
@@ -193,17 +213,20 @@ function updateTrendReadout(detail) {
   const date = readout.querySelector(".trend-hover-date");
   const value = readout.querySelector(".trend-hover-value");
   const delta = readout.querySelector(".trend-hover-delta");
+  const insight = readout.querySelector(".trend-hover-insight");
   if (!detail) {
-    date.textContent = "Glide over the line for monthly detail";
+    date.textContent = "Glide over the line";
     value.textContent = "-";
     delta.textContent = "Previous-month change";
-    delta.className = "trend-hover-delta neutral";
+    delta.className = "trend-hover-delta stable";
+    insight.textContent = "Direction will be assessed in economic context.";
     return;
   }
   date.textContent = detail.date;
   value.textContent = detail.value;
   delta.textContent = detail.delta;
-  delta.className = `trend-hover-delta ${detail.direction}`;
+  delta.className = `trend-hover-delta ${detail.signal}`;
+  insight.textContent = detail.insight;
 }
 
 function renderTrend() {
@@ -220,7 +243,8 @@ function renderTrend() {
       date: monthLabel(row.date),
       value: trendValueLabel(row[measure], measure, selected),
       delta: delta.label,
-      direction: delta.direction,
+      signal: delta.signal,
+      insight: delta.insight,
     };
   });
   const labels = { yearly_change: "12-month change (%)", monthly_change: selected.id === "CES0000000001" ? "Monthly change (thousands)" : "Monthly change (%)", value: selected.unit || "Index level" };
