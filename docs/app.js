@@ -146,19 +146,99 @@ function plotLayout(yTitle) {
   };
 }
 
+function trendValueLabel(value, measure, selected) {
+  if (!Number.isFinite(value)) return "-";
+  if (measure === "yearly_change" || (measure === "monthly_change" && selected.id !== "CES0000000001")) {
+    return `${value.toFixed(1)}%`;
+  }
+  if (measure === "monthly_change" && selected.id === "CES0000000001") {
+    return `${value >= 0 ? "+" : ""}${value.toFixed(0)}K`;
+  }
+  return selected.unit === "Percent" ? `${value.toFixed(1)}%` : value.toLocaleString("en-US", { maximumFractionDigits: 3 });
+}
+
+function trendDelta(row, previousRow, measure, selected) {
+  if (!previousRow || !Number.isFinite(row[measure]) || !Number.isFinite(previousRow[measure])) {
+    return { value: null, label: "No prior-month comparison", direction: "neutral" };
+  }
+
+  let value;
+  let suffix;
+  if (measure === "value" && selected.unit !== "Percent") {
+    value = previousRow.value === 0 ? null : ((row.value / previousRow.value) - 1) * 100;
+    suffix = "%";
+  } else if (measure === "monthly_change" && selected.id === "CES0000000001") {
+    value = row.monthly_change - previousRow.monthly_change;
+    suffix = "K";
+  } else {
+    value = row[measure] - previousRow[measure];
+    suffix = " pp";
+  }
+
+  if (!Number.isFinite(value)) {
+    return { value: null, label: "No prior-month comparison", direction: "neutral" };
+  }
+  const direction = value > 0 ? "up" : value < 0 ? "down" : "neutral";
+  const arrow = value > 0 ? "▲" : value < 0 ? "▼" : "●";
+  const digits = suffix === "K" ? 0 : 2;
+  return {
+    value,
+    direction,
+    label: `${arrow} ${value >= 0 ? "+" : ""}${value.toFixed(digits)}${suffix} vs previous month`,
+  };
+}
+
+function updateTrendReadout(detail) {
+  const readout = $("trend-hover-readout");
+  const date = readout.querySelector(".trend-hover-date");
+  const value = readout.querySelector(".trend-hover-value");
+  const delta = readout.querySelector(".trend-hover-delta");
+  if (!detail) {
+    date.textContent = "Glide over the line for monthly detail";
+    value.textContent = "-";
+    delta.textContent = "Previous-month change";
+    delta.className = "trend-hover-delta neutral";
+    return;
+  }
+  date.textContent = detail.date;
+  value.textContent = detail.value;
+  delta.textContent = detail.delta;
+  delta.className = `trend-hover-delta ${detail.direction}`;
+}
+
 function renderTrend() {
   const measure = $("measure-select").value;
   let selected = state.data.series.find((item) => item.id === $("series-select").value);
   if (!selected) selected = state.view === "inflation" ? seriesByKind("cpi")[0] : seriesByKind("labor")[0];
   const rows = filteredObservations(selected, measure);
+  const observationIndex = new Map(selected.observations.map((row, index) => [row.date, index]));
+  const hoverDetails = rows.map((row) => {
+    const index = observationIndex.get(row.date);
+    const previousRow = index > 0 ? selected.observations[index - 1] : null;
+    const delta = trendDelta(row, previousRow, measure, selected);
+    return {
+      date: monthLabel(row.date),
+      value: trendValueLabel(row[measure], measure, selected),
+      delta: delta.label,
+      direction: delta.direction,
+    };
+  });
   const labels = { yearly_change: "12-month change (%)", monthly_change: selected.id === "CES0000000001" ? "Monthly change (thousands)" : "Monthly change (%)", value: selected.unit || "Index level" };
   $("trend-title").textContent = selected.name;
   $("trend-note").textContent = `${selected.adjustment} · ${labels[measure]}`;
-  Plotly.react("trend-chart", [{
+  updateTrendReadout(null);
+  const chart = $("trend-chart");
+  Plotly.react(chart, [{
     x: rows.map((row) => row.date), y: rows.map((row) => row[measure]),
     type: "scatter", mode: "lines", line: { color: COLORS[0], width: 3 },
     fill: "tozeroy", fillcolor: "rgba(37,99,235,.09)", name: selected.name,
-  }], plotLayout(labels[measure]), { responsive: true, displaylogo: false });
+    customdata: hoverDetails,
+    hoverinfo: "none",
+  }], { ...plotLayout(labels[measure]), hovermode: "closest" }, { responsive: true, displaylogo: false });
+  chart.removeAllListeners?.("plotly_hover");
+  chart.removeAllListeners?.("plotly_unhover");
+  chart.on("plotly_hover", (event) => updateTrendReadout(event.points[0].customdata));
+  chart.on("plotly_unhover", () => updateTrendReadout(null));
 }
 
 function renderCategories() {

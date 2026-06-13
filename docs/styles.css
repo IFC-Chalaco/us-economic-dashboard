@@ -48,6 +48,24 @@ select, input, .button { min-height: 44px; border: 1px solid var(--line); border
 .chart-card.wide { grid-column: 1 / -1; }
 .chart { min-height: 380px; }
 .chart-explainer { margin: -8px 0 8px; color: var(--muted); font-size: .82rem; line-height: 1.5; }
+.trend-hover-readout {
+  min-height: 56px;
+  margin: -4px 0 8px;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .64);
+  display: grid;
+  grid-template-columns: minmax(150px, 1fr) auto minmax(190px, 1fr);
+  align-items: center;
+  gap: 16px;
+}
+.trend-hover-date { color: var(--muted); font-size: .84rem; }
+.trend-hover-value { font-family: "Newsreader", serif; font-size: 1.5rem; text-align: center; }
+.trend-hover-delta { justify-self: end; font-size: .86rem; font-weight: 700; }
+.trend-hover-delta.up { color: #15803d; }
+.trend-hover-delta.down { color: #b91c1c; }
+.trend-hover-delta.neutral { color: var(--muted); }
 .source-panel { margin-top: 14px; padding: 24px; display: grid; grid-template-columns: 260px 1fr; gap: 24px; }
 .source-panel p { margin: 0; line-height: 1.65; color: var(--muted); }
 .source-links { grid-column: 2; display: flex; flex-wrap: wrap; gap: 18px; font-size: .9rem; }
@@ -65,4 +83,7 @@ select, input, .button { min-height: 44px; border: 1px solid var(--line); border
   .chart-card.wide { grid-column: auto; }
   .hero { padding-top: 20px; }
   .chart { min-height: 320px; }
+  .trend-hover-readout { grid-template-columns: 1fr; gap: 3px; }
+  .trend-hover-value { text-align: left; }
+  .trend-hover-delta { justify-self: start; }
 }
