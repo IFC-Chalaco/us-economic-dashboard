@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Interactive dashboard of official U.S. CPI and labor-market data." />
+  <title>U.S. Economic Pulse</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,600;6..72,700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./styles.css?v=1" />
+  <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <script defer src="./app.js?v=1"></script>
+</head>
+<body>
+  <main class="shell">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">Official U.S. macroeconomic data</p>
+        <h1>U.S. Economic Pulse</h1>
+        <p class="lede">Inflation and labor-market signals, refreshed from the U.S. Bureau of Labor Statistics.</p>
+      </div>
+      <div class="status">
+        <span>Latest source check</span>
+        <strong id="updated-at">Loading...</strong>
+        <a href="https://www.bls.gov/" target="_blank" rel="noreferrer">U.S. Bureau of Labor Statistics</a>
+      </div>
+    </header>
+
+    <section id="error-banner" class="error-banner" hidden></section>
+
+    <section class="kpi-grid" aria-label="Latest economic indicators">
+      <article class="card kpi"><span>Headline CPI</span><strong id="headline-yoy">-</strong><small id="headline-note">12-month change</small></article>
+      <article class="card kpi"><span>Core CPI</span><strong id="core-yoy">-</strong><small id="core-note">12-month change</small></article>
+      <article class="card kpi"><span>Unemployment</span><strong id="unemployment">-</strong><small id="unemployment-note">Seasonally adjusted</small></article>
+      <article class="card kpi"><span>Payroll change</span><strong id="payroll">-</strong><small id="payroll-note">Thousands, monthly</small></article>
+    </section>
+
+    <section class="card narrative">
+      <div>
+        <p class="eyebrow">Current reading</p>
+        <h2>Executive summary</h2>
+      </div>
+      <p id="executive-summary">Loading official observations...</p>
+    </section>
+
+    <section class="card controls">
+      <div class="section-heading">
+        <div><p class="eyebrow">Explore the data</p><h2>Dashboard filters</h2></div>
+        <button id="reset-filters" class="button" type="button">Reset</button>
+      </div>
+      <div class="filter-grid">
+        <label><span>View</span><select id="view-select"><option value="inflation">Inflation</option><option value="labor">Labor market</option></select></label>
+        <label><span>CPI group</span><select id="group-select"><option value="All">All groups</option></select></label>
+        <label><span>Series</span><select id="series-select"></select></label>
+        <label><span>Measure</span><select id="measure-select"><option value="yearly_change">12-month change</option><option value="monthly_change">Monthly change</option><option value="value">Index level</option></select></label>
+        <label><span>Start</span><input id="start-date" type="month" /></label>
+        <label><span>End</span><input id="end-date" type="month" /></label>
+      </div>
+    </section>
+
+    <section class="chart-grid">
+      <article class="card chart-card wide">
+        <div class="section-heading"><div><p class="eyebrow">Trend</p><h2 id="trend-title">Inflation over time</h2></div><p id="trend-note" class="note"></p></div>
+        <div id="trend-chart" class="chart" aria-label="Time-series chart"></div>
+      </article>
+      <article class="card chart-card">
+        <div class="section-heading"><div><p class="eyebrow">Latest detail</p><h2>CPI category comparison</h2></div></div>
+        <div id="category-chart" class="chart" aria-label="CPI category bar chart"></div>
+      </article>
+      <article class="card chart-card">
+        <div class="section-heading"><div><p class="eyebrow">Labor pulse</p><h2>Employment indicators</h2></div></div>
+        <div id="labor-chart" class="chart" aria-label="Labor-market chart"></div>
+      </article>
+    </section>
+
+    <section class="card source-panel">
+      <div><p class="eyebrow">Provenance</p><h2>Official sources and definitions</h2></div>
+      <p>Values come directly from BLS series and retain their official seasonal-adjustment status. CPI changes are calculated from published index levels. Payroll change is calculated from published total nonfarm employment levels.</p>
+      <div class="source-links">
+        <a href="https://www.bls.gov/schedule/news_release/cpi.htm" target="_blank" rel="noreferrer">CPI release calendar</a>
+        <a href="https://www.bls.gov/schedule/news_release/empsit.htm" target="_blank" rel="noreferrer">Employment release calendar</a>
+        <a href="https://www.bls.gov/developers/" target="_blank" rel="noreferrer">BLS Public Data API</a>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

@@ -1,0 +1,25 @@
+{
+  "cpi": [
+    {"id": "CUSR0000SA0", "name": "All items", "group": "Headline", "adjustment": "Seasonally adjusted"},
+    {"id": "CUSR0000SA0L1E", "name": "All items less food and energy", "group": "Core", "adjustment": "Seasonally adjusted"},
+    {"id": "CUSR0000SAF1", "name": "Food", "group": "Food", "adjustment": "Seasonally adjusted"},
+    {"id": "CUSR0000SAF11", "name": "Food at home", "group": "Food", "adjustment": "Seasonally adjusted"},
+    {"id": "CUSR0000SEFV", "name": "Food away from home", "group": "Food", "adjustment": "Seasonally adjusted"},
+    {"id": "CUSR0000SA0E", "name": "Energy", "group": "Energy", "adjustment": "Seasonally adjusted"},
+    {"id": "CUSR0000SACE", "name": "Energy commodities", "group": "Energy", "adjustment": "Seasonally adjusted"},
+    {"id": "CUSR0000SAE2", "name": "Energy services", "group": "Energy", "adjustment": "Seasonally adjusted"},
+    {"id": "CUSR0000SAH1", "name": "Shelter", "group": "Housing", "adjustment": "Seasonally adjusted"},
+    {"id": "CUSR0000SETA01", "name": "New vehicles", "group": "Transportation", "adjustment": "Seasonally adjusted"},
+    {"id": "CUSR0000SETB", "name": "Used cars and trucks", "group": "Transportation", "adjustment": "Seasonally adjusted"},
+    {"id": "CUSR0000SAM", "name": "Medical care", "group": "Services", "adjustment": "Seasonally adjusted"},
+    {"id": "CUSR0000SAA", "name": "Apparel", "group": "Goods", "adjustment": "Seasonally adjusted"},
+    {"id": "CUSR0000SAR", "name": "Recreation", "group": "Services", "adjustment": "Seasonally adjusted"},
+    {"id": "CUSR0000SAE1", "name": "Education and communication", "group": "Services", "adjustment": "Seasonally adjusted"},
+    {"id": "CUSR0000SAG", "name": "Other goods and services", "group": "Other", "adjustment": "Seasonally adjusted"}
+  ],
+  "labor": [
+    {"id": "LNS14000000", "name": "Unemployment rate", "unit": "Percent", "adjustment": "Seasonally adjusted"},
+    {"id": "LNS11300000", "name": "Labor-force participation rate", "unit": "Percent", "adjustment": "Seasonally adjusted"},
+    {"id": "CES0000000001", "name": "Total nonfarm payroll employment", "unit": "Thousands", "adjustment": "Seasonally adjusted"}
+  ]
+}

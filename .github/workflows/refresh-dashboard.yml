@@ -1,0 +1,53 @@
+name: Refresh U.S. economic dashboard
+
+on:
+  schedule:
+    - cron: "15 13 * * 1-5"
+    - cron: "15 14 * * 1-5"
+  workflow_dispatch:
+
+concurrency:
+  group: refresh-us-economic-dashboard
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Refresh official BLS data
+        env:
+          BLS_API_KEY: ${{ secrets.BLS_API_KEY }}
+        run: python3 scripts/refresh_bls.py
+
+      - name: Validate published assets
+        run: |
+          python3 -m json.tool docs/data/economic_data.json >/dev/null
+          python3 -m json.tool docs/data/dashboard_meta.json >/dev/null
+          test -s docs/index.html
+          test -s docs/app.js
+          test -s docs/styles.css
+
+      - name: Commit changed observations
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/data/economic_data.json
+          git add docs/data/dashboard_meta.json
+          if git diff --staged --quiet; then
+            echo "No new BLS observations."
+          else
+            git commit -m "chore: refresh official BLS data"
+            git pull --rebase origin main
+            git push
+          fi
