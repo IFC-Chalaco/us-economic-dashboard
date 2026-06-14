@@ -254,28 +254,32 @@ function renderCategoryChart(category) {
     chart.on("plotly_hover", (event) => updateInflationReadout(event.points[0].customdata));
     chart.on("plotly_unhover", () => updateInflationReadout(null));
   } else if (category === "labor") {
+    chart.removeAllListeners?.("plotly_beforehover");
     chart.removeAllListeners?.("plotly_hover");
+    chart.on("plotly_beforehover", () => {
+      const hover = chart.querySelector(".hoverlayer g.legend");
+      if (hover) hover.style.opacity = "0";
+    });
     chart.on("plotly_hover", (event) => positionLaborHover(chart, event.points[0]));
   }
 }
 
 function positionLaborHover(chart, point) {
-  requestAnimationFrame(() => {
-    const hover = chart.querySelector(".hoverlayer g.legend");
-    if (!hover || !point) return;
-    const layout = chart._fullLayout;
-    const size = layout?._size;
-    if (!size) return;
+  const hover = chart.querySelector(".hoverlayer g.legend");
+  if (!hover || !point) return;
+  const layout = chart._fullLayout;
+  const size = layout?._size;
+  if (!size) return;
 
-    const bounds = hover.getBBox();
-    const plotLeft = size.l;
-    const plotTop = size.t;
-    const plotRight = plotLeft + size.w;
-    const useUpperLeft = new Date(point.x).getTime() < new Date("2020-04-01").getTime();
-    const x = useUpperLeft ? plotLeft + 8 : plotRight - bounds.width - 8;
-    const y = plotTop + 8;
-    hover.setAttribute("transform", `translate(${x},${y})`);
-  });
+  const bounds = hover.getBBox();
+  const plotLeft = size.l;
+  const plotTop = size.t;
+  const plotRight = plotLeft + size.w;
+  const useUpperLeft = new Date(point.x).getTime() < new Date("2020-04-01").getTime();
+  const x = useUpperLeft ? plotLeft + 8 : plotRight - bounds.width - 8;
+  const y = plotTop + 8;
+  hover.setAttribute("transform", `translate(${x},${y})`);
+  hover.style.opacity = "1";
 }
 
 function updateInflationReadout(detail) {
