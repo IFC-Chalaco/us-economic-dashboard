@@ -4,13 +4,16 @@
 from __future__ import annotations
 
 import hashlib
+import csv
 import json
 import os
 import ssl
+import subprocess
 import sys
 import urllib.error
 import urllib.request
 from io import BytesIO
+from io import StringIO
 from datetime import datetime, timezone
 from pathlib import Path
 from xml.etree import ElementTree
@@ -22,6 +25,10 @@ SITE_DIR = Path(os.environ.get("ECONOMIC_DASHBOARD_DOCS", ROOT / "docs"))
 OUTPUT_PATH = SITE_DIR / "data" / "economic_data.json"
 META_PATH = SITE_DIR / "data" / "dashboard_meta.json"
 API_URL = "https://api.bls.gov/publicAPI/v2/timeseries/data/"
+FRED_CSV_URL = (
+    "https://fred.stlouisfed.org/graph/fredgraph.csv?id={series_ids}&cosd={start_date}"
+)
+FRED_SOURCE_URL = "https://fred.stlouisfed.org/"
 SPF_MEAN_URL = (
     "https://www.philadelphiafed.org/-/media/FRBP/Assets/Surveys-And-Data/"
     "survey-of-professional-forecasters/historical-data/meanLevel.xlsx"
@@ -53,10 +60,21 @@ def ssl_context():
     return None
 
 
-def request_bytes(url: str) -> bytes:
+def request_bytes(url: str, timeout: int = 25) -> bytes:
+    if "fred.stlouisfed.org" in url:
+        result = subprocess.run(
+            ["curl", "-fsSL", "--max-time", str(timeout), url],
+            check=False,
+            capture_output=True,
+        )
+        if result.returncode == 0:
+            return result.stdout
+        raise RuntimeError(
+            f"Official data request failed for {url}: curl exit {result.returncode}"
+        )
     request = urllib.request.Request(url, headers={"User-Agent": "us-economic-dashboard/1.0"})
     try:
-        with urllib.request.urlopen(request, timeout=60, context=ssl_context()) as response:
+        with urllib.request.urlopen(request, timeout=timeout, context=ssl_context()) as response:
             return response.read()
     except (urllib.error.URLError, TimeoutError) as exc:
         raise RuntimeError(f"Official data request failed for {url}: {exc}") from exc
@@ -89,6 +107,71 @@ def request_series(series_ids: list[str], start_year: int, end_year: int) -> dic
     if body.get("status") != "REQUEST_SUCCEEDED":
         raise RuntimeError(f"BLS API error: {body.get('message', 'unknown error')}")
     return {entry["seriesID"]: entry for entry in body["Results"]["series"]}
+
+
+def finalize_fred_series(definition: dict, observations: list[dict]) -> dict:
+    observations.sort(key=lambda item: item["date"])
+    for index, observation in enumerate(observations):
+        previous = observations[index - 1]["value"] if index else None
+        observation["change"] = (
+            round(observation["value"] - previous, 4) if previous is not None else None
+        )
+        observation["pct_change"] = (
+            round((observation["value"] / previous - 1) * 100, 4)
+            if previous not in (None, 0)
+            else None
+        )
+
+    result = dict(definition)
+    result["kind"] = "fred"
+    result["source"] = "Federal Reserve Economic Data (FRED)"
+    result["source_url"] = f"https://fred.stlouisfed.org/series/{definition['id']}"
+    result["observations"] = observations
+    return result
+
+
+def load_fred_bulk(definitions: list[dict], start_year: int) -> tuple[list[dict], list[dict]]:
+    ids = [definition["id"] for definition in definitions]
+    body = request_bytes(
+        FRED_CSV_URL.format(
+            series_ids=",".join(ids), start_date=f"{start_year}-01-01"
+        ),
+        timeout=90,
+    )
+    values_by_id = {series_id: [] for series_id in ids}
+
+    csv_contents = []
+    try:
+        with ZipFile(BytesIO(body)) as archive:
+            csv_contents = [
+                archive.read(name).decode("utf-8-sig")
+                for name in archive.namelist()
+                if name.endswith(".csv")
+            ]
+    except Exception:
+        csv_contents = [body.decode("utf-8-sig")]
+
+    for content in csv_contents:
+        for row in csv.DictReader(StringIO(content)):
+            date = row.get("observation_date", "")
+            if not date or int(date[:4]) < start_year:
+                continue
+            for series_id in ids:
+                value = numeric(row.get(series_id))
+                if value is not None:
+                    values_by_id[series_id].append({"date": date, "value": value})
+
+    series = []
+    errors = []
+    for definition in definitions:
+        observations = values_by_id[definition["id"]]
+        if observations:
+            series.append(finalize_fred_series(definition, observations))
+        else:
+            errors.append(
+                {"id": definition["id"], "error": "No observations returned by FRED"}
+            )
+    return series, errors
 
 
 def xlsx_sheet_rows(workbook_bytes: bytes, sheet_name: str) -> list[dict]:
@@ -237,7 +320,16 @@ def normalize_series(raw: dict, definition: dict, kind: str) -> dict:
             observation["yearly_change"] = (
                 round((observation["value"] / prior_year - 1) * 100, 2) if prior_year else None
             )
-        elif definition["id"] == "CES0000000001":
+        else:
+            observation["monthly_change"] = (
+                round(observation["value"] - previous, 2) if previous is not None else None
+            )
+            observation["yearly_change"] = (
+                round((observation["value"] / prior_year - 1) * 100, 2)
+                if prior_year not in (None, 0)
+                else None
+            )
+        if definition["id"].startswith("CES") and definition["id"].endswith("000001"):
             observation["monthly_change"] = round(observation["value"] - previous, 1) if previous else None
 
     result = dict(definition)
@@ -274,18 +366,53 @@ def main() -> int:
     for definition in config["labor"]:
         series.append(normalize_series(raw_by_id.get(definition["id"], {}), definition, "labor"))
 
+    fred_definitions = config.get("fred", [])
+    fred_series = []
+    fred_errors = []
+    for category in ("inflation", "labor", "growth", "markets"):
+        definitions = [
+            definition
+            for definition in fred_definitions
+            if definition["category"] == category
+        ]
+        category_start_year = max(start_year, now.year - 5) if category == "markets" else start_year
+        batches = [
+            definitions[offset : offset + 7]
+            for offset in range(0, min(len(definitions), 7), 7)
+        ]
+        if len(definitions) > 7:
+            batches.extend([[definition] for definition in definitions[7:]])
+        for batch_index, batch in enumerate(batches):
+            try:
+                category_series, category_errors = load_fred_bulk(
+                    batch, category_start_year
+                )
+                fred_series.extend(category_series)
+                fred_errors.extend(category_errors)
+            except Exception as exc:
+                fred_errors.append(
+                    {
+                        "id": f"FRED_{category.upper()}_{batch_index + 1}",
+                        "error": str(exc),
+                    }
+                )
+
     payload = {
         "source": "U.S. Bureau of Labor Statistics Public Data API",
         "source_url": "https://www.bls.gov/developers/",
         "generated_at": now.isoformat(),
         "series": series,
+        "fred_series": fred_series,
+        "fred_errors": fred_errors,
         "expectations": {"unemployment": load_spf_expectations()},
     }
     previous = load_json(OUTPUT_PATH, {})
     changed = stable_hash(previous) != stable_hash(payload)
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     if changed:
-        OUTPUT_PATH.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+        OUTPUT_PATH.write_text(
+            json.dumps(payload, separators=(",", ":")) + "\n", encoding="utf-8"
+        )
 
     latest_dates = {
         item["id"]: item["observations"][-1]["date"]
@@ -297,11 +424,14 @@ def main() -> int:
         "data_changed": changed,
         "latest_observations": latest_dates,
         "series_count": len(series),
+        "fred_series_count": len(fred_series),
+        "fred_errors": fred_errors,
         "source": payload["source"],
         "source_url": payload["source_url"],
         "cpi_release_schedule": "https://www.bls.gov/schedule/news_release/cpi.htm",
         "employment_release_schedule": "https://www.bls.gov/schedule/news_release/empsit.htm",
         "expectations_source": SPF_SOURCE_URL,
+        "fred_source": FRED_SOURCE_URL,
     }
     if changed or not META_PATH.exists():
         META_PATH.write_text(json.dumps(meta, indent=2) + "\n", encoding="utf-8")

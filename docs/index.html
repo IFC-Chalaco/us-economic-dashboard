@@ -8,9 +8,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,600;6..72,700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="./styles.css?v=4" />
+  <link rel="stylesheet" href="./styles.css?v=5" />
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="./app.js?v=4"></script>
+  <script defer src="./app.js?v=5"></script>
 </head>
 <body>
   <main class="shell">
@@ -18,7 +18,7 @@
       <div>
         <p class="eyebrow">Official U.S. macroeconomic data</p>
         <h1>U.S. Economic Pulse</h1>
-        <p class="lede">Inflation and labor-market signals, refreshed from the U.S. Bureau of Labor Statistics.</p>
+        <p class="lede">A navigable view of U.S. inflation, labor, growth and market conditions from authoritative public sources.</p>
       </div>
       <div class="status">
         <span>Latest source check</span>
@@ -29,6 +29,15 @@
 
     <section id="error-banner" class="error-banner" hidden></section>
 
+    <nav class="dashboard-tabs" aria-label="Economic dashboard sections">
+      <button class="dashboard-tab active" type="button" data-tab="overview">Overview</button>
+      <button class="dashboard-tab" type="button" data-tab="inflation">Inflation</button>
+      <button class="dashboard-tab" type="button" data-tab="labor">Labor</button>
+      <button class="dashboard-tab" type="button" data-tab="growth">Growth</button>
+      <button class="dashboard-tab" type="button" data-tab="markets">Markets</button>
+    </nav>
+
+    <div class="tab-panel active" data-tab-panel="overview">
     <section class="kpi-grid" aria-label="Latest economic indicators">
       <article class="card kpi"><span>Headline CPI</span><strong id="headline-yoy">-</strong><small id="headline-note">12-month change</small></article>
       <article class="card kpi"><span>Core CPI</span><strong id="core-yoy">-</strong><small id="core-note">12-month change</small></article>
@@ -83,15 +92,75 @@
         <div id="labor-chart" class="chart" aria-label="Labor-market chart"></div>
       </article>
     </section>
+    </div>
+
+    <section class="tab-panel" data-tab-panel="inflation">
+      <div class="tab-intro card">
+        <div><p class="eyebrow">Price pressure</p><h2>Inflation pipeline</h2></div>
+        <p>CPI, PCE, producer prices, import prices, wages and labor costs show where inflation is now and where it may travel next.</p>
+      </div>
+      <div id="inflation-metrics" class="indicator-grid"></div>
+      <article class="card explorer-card">
+        <div class="section-heading">
+          <div><p class="eyebrow">Compare signals</p><h2>Inflation indicators</h2></div>
+          <select id="inflation-series-select" class="compact-select" aria-label="Inflation series"></select>
+        </div>
+        <div id="inflation-chart" class="chart"></div>
+      </article>
+    </section>
+
+    <section class="tab-panel" data-tab-panel="labor">
+      <div class="tab-intro card">
+        <div><p class="eyebrow">Employment engine</p><h2>Labor-market heat</h2></div>
+        <p>Payrolls, wages, openings, claims, underemployment, productivity and labor costs frame both growth resilience and Fed pressure.</p>
+      </div>
+      <div id="labor-metrics" class="indicator-grid"></div>
+      <div class="two-chart-grid">
+        <article class="card explorer-card">
+          <div class="section-heading"><div><p class="eyebrow">Labor signal</p><h2>Selected indicator</h2></div><select id="labor-series-select" class="compact-select" aria-label="Labor series"></select></div>
+          <div id="labor-detail-chart" class="chart"></div>
+        </article>
+        <article class="card explorer-card">
+          <div class="section-heading"><div><p class="eyebrow">Payroll breadth</p><h2>Employment by industry</h2></div></div>
+          <div id="industry-chart" class="chart"></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="tab-panel" data-tab-panel="growth">
+      <div class="tab-intro card">
+        <div><p class="eyebrow">Real economy</p><h2>Growth pulse</h2></div>
+        <p>GDP, consumption, production, capital-goods demand and housing reveal whether economic momentum is broadening or fading.</p>
+      </div>
+      <div id="growth-metrics" class="indicator-grid"></div>
+      <article class="card explorer-card">
+        <div class="section-heading"><div><p class="eyebrow">Activity trend</p><h2>Growth indicators</h2></div><select id="growth-series-select" class="compact-select" aria-label="Growth series"></select></div>
+        <div id="growth-chart" class="chart"></div>
+      </article>
+    </section>
+
+    <section class="tab-panel" data-tab-panel="markets">
+      <div class="tab-intro card">
+        <div><p class="eyebrow">Risk and valuation</p><h2>Market conditions</h2></div>
+        <p>SPX, Nasdaq, Dow, volatility, rates, the yield curve, credit spreads, financial conditions and oil connect the macro picture to asset prices.</p>
+      </div>
+      <div id="market-metrics" class="indicator-grid market-grid"></div>
+      <article class="card explorer-card">
+        <div class="section-heading"><div><p class="eyebrow">Market trend</p><h2>Indexes and market drivers</h2></div><select id="market-series-select" class="compact-select" aria-label="Market series"></select></div>
+        <div id="market-chart" class="chart"></div>
+        <p class="chart-explainer">SPX is represented by FRED's S&amp;P 500 index series. ETF prices such as SPY and QQQ require a separate licensed market-data provider.</p>
+      </article>
+    </section>
 
     <section class="card source-panel">
       <div><p class="eyebrow">Provenance</p><h2>Official sources and definitions</h2></div>
-      <p>Values come directly from BLS series and retain their official seasonal-adjustment status. CPI changes are calculated from published index levels. Payroll change is calculated from published total nonfarm employment levels.</p>
+      <p>Labor and CPI detail come from BLS. Broader macro, rates, commodities and equity indexes are distributed through FRED from their underlying official or licensed sources. Calculated changes are derived from published observations.</p>
       <div class="source-links">
         <a href="https://www.bls.gov/schedule/news_release/cpi.htm" target="_blank" rel="noreferrer">CPI release calendar</a>
         <a href="https://www.bls.gov/schedule/news_release/empsit.htm" target="_blank" rel="noreferrer">Employment release calendar</a>
         <a href="https://www.bls.gov/developers/" target="_blank" rel="noreferrer">BLS Public Data API</a>
         <a href="https://www.philadelphiafed.org/surveys-and-data/real-time-data-research/survey-of-professional-forecasters" target="_blank" rel="noreferrer">Philadelphia Fed expectations</a>
+        <a href="https://fred.stlouisfed.org/" target="_blank" rel="noreferrer">Federal Reserve Economic Data</a>
       </div>
     </section>
   </main>

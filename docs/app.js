@@ -1,6 +1,6 @@
 const DATA_URL = "./data/economic_data.json";
 const COLORS = ["#2563eb", "#0f766e", "#c17a16", "#7c3aed", "#dc2626", "#0891b2", "#4d7c0f"];
-const state = { data: null, view: "inflation" };
+const state = { data: null, view: "inflation", activeTab: "overview" };
 const $ = (id) => document.getElementById(id);
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -17,6 +17,12 @@ function bindControls() {
       render();
     }));
   $("reset-filters").addEventListener("click", resetFilters);
+  document.querySelectorAll("[data-tab]").forEach((button) => {
+    button.addEventListener("click", () => activateTab(button.dataset.tab));
+  });
+  ["inflation", "labor", "growth", "market"].forEach((category) => {
+    $(`${category}-series-select`).addEventListener("change", () => renderCategoryChart(category));
+  });
 }
 
 async function loadData() {
@@ -26,10 +32,181 @@ async function loadData() {
     state.data = await response.json();
     initializeControls();
     render();
+    initializeCategoryTabs();
   } catch (error) {
     $("error-banner").hidden = false;
     $("error-banner").textContent = `Unable to load published BLS data: ${error.message}`;
   }
+}
+
+function activateTab(tab) {
+  state.activeTab = tab;
+  document.querySelectorAll("[data-tab]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.tab === tab);
+  });
+  document.querySelectorAll("[data-tab-panel]").forEach((panel) => {
+    panel.classList.toggle("active", panel.dataset.tabPanel === tab);
+  });
+  if (tab !== "overview") {
+    window.requestAnimationFrame(() => renderCategoryTab(tab));
+  }
+  if (window.location.hash !== `#${tab}`) {
+    window.history.replaceState(null, "", `#${tab}`);
+  }
+}
+
+function fredByCategory(category) {
+  return (state.data.fred_series || []).filter((item) => item.category === category);
+}
+
+function initializeCategoryTabs() {
+  const categorySources = {
+    inflation: [
+      ...seriesByKind("cpi").filter((item) => ["CUSR0000SA0", "CUSR0000SA0L1E"].includes(item.id)),
+      ...fredByCategory("inflation"),
+      ...seriesByKind("labor").filter((item) => item.id === "CES0500000003"),
+    ],
+    labor: [
+      ...seriesByKind("labor").filter((item) => !item.id.match(/^CES(20|30|50|55|60|65|70|90)/)),
+      ...fredByCategory("labor"),
+    ],
+    growth: fredByCategory("growth"),
+    market: fredByCategory("markets"),
+  };
+
+  Object.entries(categorySources).forEach(([category, source]) => {
+    const select = $(`${category}-series-select`);
+    select.innerHTML = "";
+    source.forEach((item) => select.add(new Option(item.name, item.id)));
+  });
+
+  renderCategoryCards("inflation", "inflation-metrics", categorySources.inflation.slice(0, 8));
+  renderCategoryCards("labor", "labor-metrics", categorySources.labor.slice(0, 8));
+  renderCategoryCards("growth", "growth-metrics", categorySources.growth);
+  renderCategoryCards("market", "market-metrics", categorySources.market);
+  const requestedTab = window.location.hash.slice(1);
+  if (["overview", "inflation", "labor", "growth", "markets"].includes(requestedTab)) {
+    activateTab(requestedTab);
+  }
+}
+
+function allExtendedSeries() {
+  return [...(state.data.series || []), ...(state.data.fred_series || [])];
+}
+
+function findExtendedSeries(id) {
+  return allExtendedSeries().find((item) => item.id === id);
+}
+
+function latestChange(series) {
+  const observations = series?.observations || [];
+  const row = observations.at(-1);
+  if (!row) return { row: null, value: null, type: "change" };
+  if (series.kind === "cpi") return { row, value: row.yearly_change, type: "yearly" };
+  if (series.kind === "fred") {
+    const lag = series.frequency === "Monthly" ? 12 : series.frequency === "Quarterly" ? 4 : 1;
+    const previous = observations.at(-(lag + 1));
+    const value = previous?.value && row.value
+      ? ((row.value / previous.value) - 1) * 100
+      : row.pct_change;
+    return { row, value, type: lag > 1 ? "yearly" : "change" };
+  }
+  return { row, value: row.monthly_change, type: "change" };
+}
+
+function formatIndicatorValue(series, value) {
+  if (!Number.isFinite(value)) return "-";
+  if (series.unit === "Percent" || series.unit === "Percentage points") return `${value.toFixed(2)}%`;
+  if (series.format === "currency" || series.unit?.includes("Dollars")) return `$${value.toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
+  if (Math.abs(value) >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
+  if (Math.abs(value) >= 1000) return `${(value / 1000).toFixed(1)}K`;
+  return value.toLocaleString("en-US", { maximumFractionDigits: 2 });
+}
+
+function indicatorSignal(series, change) {
+  if (!Number.isFinite(change) || change === 0) return "neutral";
+  const preference = series.signal || (
+    series.kind === "cpi" || series.id === "LNS14000000" ? "lower" : "higher"
+  );
+  if (preference === "neutral") return "neutral";
+  return (change > 0 && preference === "higher") || (change < 0 && preference === "lower")
+    ? "positive"
+    : "negative";
+}
+
+function renderCategoryCards(category, targetId, source) {
+  const target = $(targetId);
+  target.innerHTML = "";
+  source.forEach((series) => {
+    const { row, value: change, type } = latestChange(series);
+    if (!row) return;
+    const signal = indicatorSignal(series, change);
+    const arrow = change > 0 ? "▲" : change < 0 ? "▼" : "●";
+    const changeLabel = Number.isFinite(change)
+      ? `${arrow} ${change >= 0 ? "+" : ""}${change.toFixed(2)}% ${type === "yearly" ? "over 12 months" : "from prior period"}`
+      : "No prior-period comparison";
+    const card = document.createElement("article");
+    card.className = "card indicator-card";
+    card.innerHTML = `
+      <span class="indicator-name">${series.name}</span>
+      <strong>${formatIndicatorValue(series, row.value)}</strong>
+      <small>${monthLabel(row.date)} · ${series.frequency || series.adjustment || "Published observation"}</small>
+      <span class="indicator-change ${signal}">${changeLabel}</span>
+    `;
+    target.appendChild(card);
+  });
+}
+
+function renderCategoryTab(tab) {
+  const category = tab === "markets" ? "market" : tab;
+  renderCategoryChart(category);
+  if (tab === "labor") renderIndustryChart();
+}
+
+function renderCategoryChart(category) {
+  const select = $(`${category}-series-select`);
+  const series = findExtendedSeries(select.value);
+  if (!series) return;
+  const chartId = {
+    inflation: "inflation-chart",
+    labor: "labor-detail-chart",
+    growth: "growth-chart",
+    market: "market-chart",
+  }[category];
+  const rows = series.observations || [];
+  const color = category === "market" ? "#7c3aed" : category === "growth" ? "#c17a16" : category === "labor" ? "#0f766e" : "#2563eb";
+  Plotly.react(chartId, [{
+    x: rows.map((row) => row.date),
+    y: rows.map((row) => row.value),
+    type: "scatter",
+    mode: "lines",
+    line: { color, width: 3 },
+    fill: "tozeroy",
+    fillcolor: `${color}12`,
+    name: series.name,
+    hovertemplate: `%{x|%b %Y}<br>${series.name}: %{y:,.2f}<extra></extra>`,
+  }], {
+    ...plotLayout(series.unit || "Value"),
+    title: { text: series.name, x: 0, font: { family: "Newsreader", size: 20 } },
+  }, { responsive: true, displaylogo: false });
+}
+
+function renderIndustryChart() {
+  const industries = seriesByKind("labor")
+    .filter((item) => item.id.match(/^CES(20|30|50|55|60|65|70|90)/))
+    .map((item) => ({ name: item.name.replace(" employment", ""), change: item.observations.at(-1)?.monthly_change }))
+    .filter((item) => Number.isFinite(item.change))
+    .sort((a, b) => a.change - b.change);
+  Plotly.react("industry-chart", [{
+    x: industries.map((item) => item.change),
+    y: industries.map((item) => item.name),
+    type: "bar",
+    orientation: "h",
+    marker: { color: industries.map((item) => item.change >= 0 ? "#0f766e" : "#b91c1c") },
+    text: industries.map((item) => `${item.change >= 0 ? "+" : ""}${item.change.toFixed(0)}K`),
+    textposition: "outside",
+    hovertemplate: "%{y}<br>%{x:+.0f}K jobs<extra></extra>",
+  }], { ...plotLayout("Monthly payroll change (thousands)"), margin: { l: 170, r: 40, t: 18, b: 48 }, showlegend: false }, { responsive: true, displaylogo: false });
 }
 
 function initializeControls() {

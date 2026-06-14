@@ -25,7 +25,7 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Refresh official BLS data
+      - name: Refresh macro and market data
         env:
           BLS_API_KEY: ${{ secrets.BLS_API_KEY }}
         run: python3 scripts/refresh_bls.py
@@ -45,9 +45,9 @@ jobs:
           git add docs/data/economic_data.json
           git add docs/data/dashboard_meta.json
           if git diff --staged --quiet; then
-            echo "No new BLS observations."
+            echo "No new macro or market observations."
           else
-            git commit -m "chore: refresh official BLS data"
+            git commit -m "chore: refresh macro and market data"
             git pull --rebase origin main
             git push
           fi

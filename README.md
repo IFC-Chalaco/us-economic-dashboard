@@ -1,6 +1,6 @@
 # U.S. Economic Metrics Dashboard
 
-Interactive, GitHub Pages-ready dashboard for official U.S. inflation and labor-market data.
+Interactive, GitHub Pages-ready dashboard for U.S. inflation, labor, growth and market conditions.
 
 ## Live dashboard
 
@@ -14,11 +14,14 @@ Published from its own GitHub repository:
 - Detailed CPI categories and user-selectable category groups
 - Unemployment rate, labor-force participation, and payroll employment
 - Philadelphia Fed professional-forecaster expectation ranges for unemployment
+- PPI, PCE inflation, import prices, JOLTS, ECI, productivity, unit labor costs and claims
+- GDP, retail sales, industrial production, durable goods, housing starts and permits
+- SPX/S&P 500, Nasdaq, Dow, VIX, Treasury rates, yield curve, credit spreads, financial conditions and oil
 - Official release dates, observation periods, adjustment status, and source links
 
 ## Refresh architecture
 
-The scheduled GitHub Action runs each weekday after the standard BLS 8:30 a.m. ET release window. The ingestor requests official BLS API data and rewrites the published JSON only when observations change. If the data changed, the workflow commits the refreshed files to `main`; GitHub Pages then serves the updated dashboard from `/docs`.
+The scheduled GitHub Action runs each weekday after the standard U.S. release window. The ingestor requests BLS, Philadelphia Fed and FRED data and rewrites the published JSON only when observations change. If the data changed, the workflow commits the refreshed files to `main`; GitHub Pages then serves the updated dashboard from `/docs`.
 
 The schedule is deliberately more frequent than the monthly releases because BLS release dates vary. No unofficial estimates are inserted.
 
@@ -37,5 +40,6 @@ Open `http://localhost:8000/`.
 - [Consumer Price Index release schedule](https://www.bls.gov/schedule/news_release/cpi.htm)
 - [Employment Situation release schedule](https://www.bls.gov/schedule/news_release/empsit.htm)
 - [Philadelphia Fed Survey of Professional Forecasters](https://www.philadelphiafed.org/surveys-and-data/real-time-data-research/survey-of-professional-forecasters)
+- [Federal Reserve Economic Data](https://fred.stlouisfed.org/)
 
 All displayed values are derived from official BLS series. See `config/series.json` for the exact series catalog.
