@@ -253,7 +253,40 @@ function renderCategoryChart(category) {
     chart.removeAllListeners?.("plotly_unhover");
     chart.on("plotly_hover", (event) => updateInflationReadout(event.points[0].customdata));
     chart.on("plotly_unhover", () => updateInflationReadout(null));
+  } else if (category === "labor") {
+    chart.removeAllListeners?.("plotly_hover");
+    chart.on("plotly_hover", (event) => positionLaborHover(chart, event.points[0]));
   }
+}
+
+function positionLaborHover(chart, point) {
+  requestAnimationFrame(() => {
+    const hover = chart.querySelector(".hoverlayer g.legend");
+    if (!hover || !point) return;
+    const layout = chart._fullLayout;
+    const size = layout?._size;
+    if (!size) return;
+
+    const bounds = hover.getBBox();
+    const pointX = point.xaxis._offset + point.xaxis.d2p(point.x);
+    const pointY = point.yaxis._offset + point.yaxis.d2p(point.y);
+    const plotLeft = size.l;
+    const plotTop = size.t;
+    const plotRight = plotLeft + size.w;
+    const plotBottom = plotTop + size.h;
+    const gap = 14;
+    const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+
+    let x = clamp(pointX - bounds.width / 2, plotLeft + 6, plotRight - bounds.width - 6);
+    let y = pointY - bounds.height - gap;
+    if (y < plotTop + 6) {
+      x = pointX + gap;
+      if (x + bounds.width > plotRight - 6) x = pointX - bounds.width - gap;
+      x = clamp(x, plotLeft + 6, plotRight - bounds.width - 6);
+      y = clamp(pointY - bounds.height / 2, plotTop + 6, plotBottom - bounds.height - 6);
+    }
+    hover.setAttribute("transform", `translate(${x},${y})`);
+  });
 }
 
 function updateInflationReadout(detail) {
