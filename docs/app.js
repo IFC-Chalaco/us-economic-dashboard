@@ -208,8 +208,10 @@ function renderCategoryChart(category) {
           "Dollars per hour": "$",
           Hours: " hours",
         }[series.unit] || "";
+        const arrow = delta > 0 ? "▲" : delta < 0 ? "▼" : "●";
+        const arrowColor = delta > 0 ? "#b91c1c" : delta < 0 ? "#15803d" : "#b45309";
         return Number.isFinite(delta)
-          ? `${delta > 0 ? "▲" : delta < 0 ? "▼" : "●"} ${unit === "$" ? unit : ""}${delta >= 0 ? "+" : ""}${delta.toFixed(2)}${unit === "$" ? "" : unit} vs previous month`
+          ? `<span style="color:${arrowColor};font-weight:700">${arrow}</span> ${unit === "$" ? unit : ""}${delta >= 0 ? "+" : ""}${delta.toFixed(2)}${unit === "$" ? "" : unit} vs prior month`
           : "No prior-month comparison";
       })
     : null;
@@ -228,7 +230,7 @@ function renderCategoryChart(category) {
     hoverinfo: category === "inflation" ? "none" : undefined,
     hovertemplate: category === "inflation"
       ? undefined
-      : `%{x|%b %Y}<br>${series.name}: %{y:,.2f}${category === "labor" ? "<br>%{customdata}" : ""}<extra></extra>`,
+      : `${category === "labor" ? "" : "%{x|%b %Y}<br>"}${series.name}: %{y:,.2f}${category === "labor" ? "<br>%{customdata}" : ""}<extra></extra>`,
   }], {
     ...layout,
     margin: { ...layout.margin, t: 48 },
@@ -240,6 +242,9 @@ function renderCategoryChart(category) {
       yanchor: "top",
       font: { family: "Newsreader", size: 20 },
     },
+    hoverlabel: category === "labor"
+      ? { align: "left", font: { family: "DM Sans", size: 11 } }
+      : undefined,
     hovermode: category === "inflation" ? "closest" : "x unified",
   }, { responsive: true, displaylogo: false });
   if (category === "inflation") {
