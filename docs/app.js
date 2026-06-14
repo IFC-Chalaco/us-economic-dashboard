@@ -199,6 +199,7 @@ function renderCategoryChart(category) {
       })
     : null;
   const chart = $(chartId);
+  const layout = plotLayout(series.unit || "Value");
   Plotly.react(chart, [{
     x: rows.map((row) => row.date),
     y: rows.map((row) => row.value),
@@ -212,8 +213,16 @@ function renderCategoryChart(category) {
     hoverinfo: category === "inflation" ? "none" : undefined,
     hovertemplate: category === "inflation" ? undefined : `%{x|%b %Y}<br>${series.name}: %{y:,.2f}<extra></extra>`,
   }], {
-    ...plotLayout(series.unit || "Value"),
-    title: { text: series.name, x: 0, font: { family: "Newsreader", size: 20 } },
+    ...layout,
+    margin: { ...layout.margin, t: 48 },
+    title: {
+      text: series.name,
+      x: 0.05,
+      y: 0.98,
+      xanchor: "left",
+      yanchor: "top",
+      font: { family: "Newsreader", size: 20 },
+    },
     hovermode: category === "inflation" ? "closest" : "x unified",
   }, { responsive: true, displaylogo: false });
   if (category === "inflation") {
