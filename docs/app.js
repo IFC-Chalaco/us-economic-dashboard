@@ -198,6 +198,21 @@ function renderCategoryChart(category) {
         };
       })
     : null;
+  const laborDetails = category === "labor"
+    ? rows.map((row, index) => {
+        const previous = index > 0 ? rows[index - 1] : null;
+        const delta = previous ? row.value - previous.value : null;
+        const unit = {
+          Percent: "pp",
+          Thousands: "K",
+          "Dollars per hour": "$",
+          Hours: " hours",
+        }[series.unit] || "";
+        return Number.isFinite(delta)
+          ? `${delta > 0 ? "▲" : delta < 0 ? "▼" : "●"} ${unit === "$" ? unit : ""}${delta >= 0 ? "+" : ""}${delta.toFixed(2)}${unit === "$" ? "" : unit} vs previous month`
+          : "No prior-month comparison";
+      })
+    : null;
   const chart = $(chartId);
   const layout = plotLayout(series.unit || "Value");
   Plotly.react(chart, [{
@@ -209,9 +224,11 @@ function renderCategoryChart(category) {
     fill: "tozeroy",
     fillcolor: `${color}12`,
     name: series.name,
-    customdata: inflationDetails,
+    customdata: inflationDetails || laborDetails,
     hoverinfo: category === "inflation" ? "none" : undefined,
-    hovertemplate: category === "inflation" ? undefined : `%{x|%b %Y}<br>${series.name}: %{y:,.2f}<extra></extra>`,
+    hovertemplate: category === "inflation"
+      ? undefined
+      : `%{x|%b %Y}<br>${series.name}: %{y:,.2f}${category === "labor" ? "<br>%{customdata}" : ""}<extra></extra>`,
   }], {
     ...layout,
     margin: { ...layout.margin, t: 48 },
