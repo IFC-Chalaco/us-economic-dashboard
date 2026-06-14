@@ -266,8 +266,22 @@ function renderIndustryChart() {
     marker: { color: industries.map((item) => item.change >= 0 ? "#0f766e" : "#b91c1c") },
     text: industries.map((item) => `${item.change >= 0 ? "+" : ""}${item.change.toFixed(0)}K`),
     textposition: "outside",
-    hovertemplate: "%{y}<br>%{x:+.0f}K jobs<extra></extra>",
-  }], { ...plotLayout("Monthly payroll change (thousands)"), margin: { l: 170, r: 40, t: 18, b: 48 }, showlegend: false }, { responsive: true, displaylogo: false });
+    hoverinfo: "skip",
+  }], {
+    ...plotLayout(""),
+    margin: { l: 205, r: 52, t: 18, b: 48 },
+    showlegend: false,
+    hovermode: false,
+    xaxis: {
+      ...plotLayout("").xaxis,
+      title: { text: "Monthly payroll change (thousands)", standoff: 12 },
+    },
+    yaxis: {
+      ...plotLayout("").yaxis,
+      title: { text: "" },
+      automargin: true,
+    },
+  }, { responsive: true, displaylogo: false });
 }
 
 function initializeControls() {
