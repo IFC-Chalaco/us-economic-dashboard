@@ -8,6 +8,8 @@
   --teal: #0f766e;
   --gold: #c17a16;
   --shadow: 0 18px 55px rgba(40, 47, 62, 0.09);
+  --ease-out: cubic-bezier(.2, .75, .25, 1);
+  --ease-spring: cubic-bezier(.16, 1, .3, 1);
 }
 * { box-sizing: border-box; }
 html {
@@ -36,9 +38,36 @@ h1 { font-size: clamp(3rem, 7vw, 6.8rem); line-height: .88; letter-spacing: -.05
 h2 { font-size: clamp(1.5rem, 2.5vw, 2.2rem); }
 .lede { color: var(--muted); max-width: 680px; font-size: 1.1rem; }
 .eyebrow { margin: 0 0 8px; color: var(--teal); font-size: .74rem; font-weight: 700; text-transform: uppercase; letter-spacing: .15em; }
-.status { min-width: 260px; border-left: 2px solid var(--gold); padding-left: 18px; display: grid; gap: 5px; }
+.status { position: relative; min-width: 260px; border-left: 2px solid var(--gold); padding-left: 18px; display: grid; gap: 5px; }
+.status::before {
+  content: "";
+  position: absolute;
+  left: -6px;
+  top: 3px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--gold);
+  box-shadow: 0 0 0 0 rgba(193, 122, 22, .3);
+  animation: status-pulse 3.2s ease-out infinite;
+}
 .status span, .status a, .note { color: var(--muted); font-size: .82rem; }
-.card { background: var(--card); border: 1px solid var(--line); border-radius: 22px; box-shadow: var(--shadow); backdrop-filter: blur(16px); }
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(16px);
+  transition:
+    transform 260ms var(--ease-out),
+    box-shadow 260ms var(--ease-out),
+    border-color 260ms ease;
+}
+.card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(37, 99, 235, .2);
+  box-shadow: 0 24px 68px rgba(40, 47, 62, .13);
+}
 .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
 .kpi { padding: 22px; display: grid; gap: 5px; }
 .kpi span, .kpi small { color: var(--muted); }
@@ -50,8 +79,15 @@ h2 { font-size: clamp(1.5rem, 2.5vw, 2.2rem); }
 .filter-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; }
 label { display: grid; gap: 7px; }
 label span { color: var(--muted); font-size: .8rem; font-weight: 600; }
-select, input, .button { min-height: 44px; border: 1px solid var(--line); border-radius: 11px; background: #fff; color: var(--ink); padding: 0 12px; font: inherit; }
+select, input, .button { min-height: 44px; border: 1px solid var(--line); border-radius: 11px; background: #fff; color: var(--ink); padding: 0 12px; font: inherit; transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease; }
+select:hover, input:hover, .button:hover { border-color: rgba(37, 99, 235, .36); }
+select:focus-visible, input:focus-visible, .button:focus-visible, .dashboard-tab:focus-visible {
+  outline: 0;
+  border-color: var(--blue);
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, .13);
+}
 .button { cursor: pointer; font-weight: 600; }
+.button:active { transform: translateY(1px); }
 .chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; }
 .chart-card { padding: 24px; min-width: 0; }
 .chart-card.wide { grid-column: 1 / -1; }
@@ -122,14 +158,41 @@ select, input, .button { min-height: 44px; border: 1px solid var(--line); border
   font-weight: 700;
   cursor: pointer;
   white-space: nowrap;
+  transition:
+    color 180ms ease,
+    background-color 240ms var(--ease-out),
+    transform 180ms ease,
+    box-shadow 240ms ease;
 }
-.dashboard-tab.active { color: #fff; background: var(--ink); }
+.dashboard-tab:hover { color: var(--ink); background: rgba(19, 34, 56, .06); }
+.dashboard-tab:active { transform: scale(.98); }
+.dashboard-tab.active {
+  color: #fff;
+  background: var(--ink);
+  box-shadow: 0 7px 18px rgba(19, 34, 56, .2);
+}
 .tab-panel {
   display: none;
   min-height: 1px;
   overflow: visible;
 }
 .tab-panel.active { display: block; }
+.tab-panel.is-entering {
+  animation: panel-enter 380ms var(--ease-spring) both;
+}
+.tab-panel.is-entering > .tab-intro,
+.tab-panel.is-entering > .indicator-grid,
+.tab-panel.is-entering > .explorer-card,
+.tab-panel.is-entering > .two-chart-grid,
+.tab-panel.is-entering > .kpi-grid,
+.tab-panel.is-entering > .narrative,
+.tab-panel.is-entering > .controls,
+.tab-panel.is-entering > .chart-grid {
+  animation: content-rise 430ms var(--ease-spring) both;
+}
+.tab-panel.is-entering > :nth-child(2) { animation-delay: 45ms; }
+.tab-panel.is-entering > :nth-child(3) { animation-delay: 90ms; }
+.tab-panel.is-entering > :nth-child(4) { animation-delay: 135ms; }
 .tab-intro {
   margin-bottom: 14px;
   padding: 24px;
@@ -152,6 +215,8 @@ select, input, .button { min-height: 44px; border: 1px solid var(--line); border
   flex-direction: column;
   gap: 5px;
 }
+.indicator-card:hover strong,
+.kpi:hover strong { color: var(--blue); }
 .indicator-card .indicator-name { color: var(--muted); font-size: .82rem; min-height: 38px; }
 .indicator-card strong { font-family: "Newsreader", serif; font-size: 2rem; line-height: 1; }
 .indicator-card small { color: var(--muted); line-height: 1.4; }
@@ -163,6 +228,34 @@ select, input, .button { min-height: 44px; border: 1px solid var(--line); border
 .compact-select { min-width: 260px; max-width: 420px; }
 .two-chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .market-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+
+@keyframes panel-enter {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes content-rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes status-pulse {
+  0%, 58%, 100% { box-shadow: 0 0 0 0 rgba(193, 122, 22, 0); }
+  68% { box-shadow: 0 0 0 8px rgba(193, 122, 22, .12); }
+  80% { box-shadow: 0 0 0 14px rgba(193, 122, 22, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+  .card:hover { transform: none; }
+}
 
 @media (max-width: 980px) {
   .hero, .narrative, .source-panel { grid-template-columns: 1fr; display: grid; }

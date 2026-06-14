@@ -46,6 +46,10 @@ function activateTab(tab) {
   });
   document.querySelectorAll("[data-tab-panel]").forEach((panel) => {
     panel.classList.toggle("active", panel.dataset.tabPanel === tab);
+    panel.classList.remove("is-entering");
+    if (panel.dataset.tabPanel === tab) {
+      window.requestAnimationFrame(() => panel.classList.add("is-entering"));
+    }
   });
   if (tab !== "overview") {
     window.requestAnimationFrame(() => renderCategoryTab(tab));
