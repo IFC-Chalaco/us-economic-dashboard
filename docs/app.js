@@ -268,23 +268,12 @@ function positionLaborHover(chart, point) {
     if (!size) return;
 
     const bounds = hover.getBBox();
-    const pointX = point.xaxis._offset + point.xaxis.d2p(point.x);
-    const pointY = point.yaxis._offset + point.yaxis.d2p(point.y);
     const plotLeft = size.l;
     const plotTop = size.t;
     const plotRight = plotLeft + size.w;
-    const plotBottom = plotTop + size.h;
-    const gap = 14;
-    const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
-
-    let x = clamp(pointX - bounds.width / 2, plotLeft + 6, plotRight - bounds.width - 6);
-    let y = pointY - bounds.height - gap;
-    if (y < plotTop + 6) {
-      x = pointX + gap;
-      if (x + bounds.width > plotRight - 6) x = pointX - bounds.width - gap;
-      x = clamp(x, plotLeft + 6, plotRight - bounds.width - 6);
-      y = clamp(pointY - bounds.height / 2, plotTop + 6, plotBottom - bounds.height - 6);
-    }
+    const useUpperLeft = new Date(point.x).getTime() < new Date("2020-04-01").getTime();
+    const x = useUpperLeft ? plotLeft + 8 : plotRight - bounds.width - 8;
+    const y = plotTop + 8;
     hover.setAttribute("transform", `translate(${x},${y})`);
   });
 }
