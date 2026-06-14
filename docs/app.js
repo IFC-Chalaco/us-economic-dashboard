@@ -179,7 +179,27 @@ function renderCategoryChart(category) {
   }[category];
   const rows = series.observations || [];
   const color = category === "market" ? "#7c3aed" : category === "growth" ? "#c17a16" : category === "labor" ? "#0f766e" : "#2563eb";
-  Plotly.react(chartId, [{
+  const inflationDetails = category === "inflation"
+    ? rows.map((row, index) => {
+        const previous = index > 0 ? rows[index - 1] : null;
+        const rawDelta = previous ? row.value - previous.value : null;
+        const delta = previous && series.unit !== "Percent" && previous.value !== 0
+          ? ((row.value / previous.value) - 1) * 100
+          : rawDelta;
+        const deltaUnit = series.unit === "Percent" ? "pp" : "%";
+        return {
+          date: monthLabel(row.date),
+          value: formatIndicatorValue(series, row.value),
+          delta,
+          label: Number.isFinite(delta)
+            ? `${delta > 0 ? "▲" : delta < 0 ? "▼" : "●"} ${delta >= 0 ? "+" : ""}${delta.toFixed(2)} ${deltaUnit} vs previous month`
+            : "No prior-month comparison",
+          signal: !Number.isFinite(rawDelta) || rawDelta === 0 ? "stable" : rawDelta < 0 ? "favorable" : "adverse",
+        };
+      })
+    : null;
+  const chart = $(chartId);
+  Plotly.react(chart, [{
     x: rows.map((row) => row.date),
     y: rows.map((row) => row.value),
     type: "scatter",
@@ -188,11 +208,39 @@ function renderCategoryChart(category) {
     fill: "tozeroy",
     fillcolor: `${color}12`,
     name: series.name,
-    hovertemplate: `%{x|%b %Y}<br>${series.name}: %{y:,.2f}<extra></extra>`,
+    customdata: inflationDetails,
+    hoverinfo: category === "inflation" ? "none" : undefined,
+    hovertemplate: category === "inflation" ? undefined : `%{x|%b %Y}<br>${series.name}: %{y:,.2f}<extra></extra>`,
   }], {
     ...plotLayout(series.unit || "Value"),
     title: { text: series.name, x: 0, font: { family: "Newsreader", size: 20 } },
+    hovermode: category === "inflation" ? "closest" : "x unified",
   }, { responsive: true, displaylogo: false });
+  if (category === "inflation") {
+    updateInflationReadout(null);
+    chart.removeAllListeners?.("plotly_hover");
+    chart.removeAllListeners?.("plotly_unhover");
+    chart.on("plotly_hover", (event) => updateInflationReadout(event.points[0].customdata));
+    chart.on("plotly_unhover", () => updateInflationReadout(null));
+  }
+}
+
+function updateInflationReadout(detail) {
+  const readout = $("inflation-hover-readout");
+  const date = readout.querySelector(".inflation-hover-date");
+  const value = readout.querySelector(".inflation-hover-value");
+  const delta = readout.querySelector(".inflation-hover-delta");
+  if (!detail) {
+    readout.className = "inflation-hover-readout stable";
+    date.textContent = "Glide over the line";
+    value.textContent = "-";
+    delta.textContent = "Previous-month delta";
+    return;
+  }
+  readout.className = `inflation-hover-readout ${detail.signal} is-active`;
+  date.textContent = detail.date;
+  value.textContent = detail.value;
+  delta.textContent = detail.label;
 }
 
 function renderIndustryChart() {

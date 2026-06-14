@@ -124,6 +124,65 @@ select:focus-visible, input:focus-visible, .button:focus-visible, .dashboard-tab
 .trend-hover-delta.adverse { color: #991b1b; background: #fee2e2; }
 .trend-hover-delta.stable { color: #92400e; background: #fef3c7; }
 .trend-hover-insight { color: var(--muted); font-size: .82rem; line-height: 1.4; }
+.inflation-hover-readout {
+  position: relative;
+  overflow: hidden;
+  min-height: 104px;
+  margin: -4px 0 10px;
+  padding: 15px 18px;
+  border: 1px solid rgba(193, 122, 22, .2);
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  background:
+    radial-gradient(circle at 92% 18%, rgba(255, 255, 255, .7), transparent 32%),
+    linear-gradient(120deg, rgba(254, 243, 199, .88), rgba(255, 255, 255, .76) 68%);
+  transition:
+    background 320ms var(--ease-out),
+    border-color 320ms ease,
+    box-shadow 320ms ease,
+    transform 240ms var(--ease-out);
+}
+.inflation-hover-readout::after {
+  content: "";
+  position: absolute;
+  inset: auto -10% -70% 35%;
+  height: 150%;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .35);
+  transform: translateX(25%);
+  transition: transform 520ms var(--ease-spring);
+  pointer-events: none;
+}
+.inflation-hover-readout.is-active {
+  transform: translateY(-2px);
+}
+.inflation-hover-readout.is-active::after {
+  transform: translateX(0);
+}
+.inflation-hover-readout.favorable {
+  border-color: rgba(22, 101, 52, .22);
+  background:
+    radial-gradient(circle at 92% 18%, rgba(255, 255, 255, .72), transparent 32%),
+    linear-gradient(120deg, rgba(220, 252, 231, .94), rgba(240, 253, 244, .72) 64%, rgba(255, 255, 255, .8));
+  box-shadow: 0 14px 34px rgba(22, 101, 52, .09);
+}
+.inflation-hover-readout.adverse {
+  border-color: rgba(153, 27, 27, .2);
+  background:
+    radial-gradient(circle at 92% 18%, rgba(255, 255, 255, .72), transparent 32%),
+    linear-gradient(120deg, rgba(254, 226, 226, .94), rgba(254, 242, 242, .72) 64%, rgba(255, 255, 255, .8));
+  box-shadow: 0 14px 34px rgba(153, 27, 27, .08);
+}
+.inflation-hover-kicker { position: relative; z-index: 1; color: var(--muted); font-size: .68rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.inflation-hover-date { position: relative; z-index: 1; font-family: "Newsreader", serif; font-size: clamp(1.55rem, 3vw, 2.15rem); line-height: 1; }
+.inflation-hover-metrics { position: relative; z-index: 1; display: flex; align-items: baseline; flex-wrap: wrap; gap: 10px; margin-top: 5px; }
+.inflation-hover-value { font-family: "Newsreader", serif; font-size: 1.55rem; line-height: 1; }
+.inflation-hover-delta { padding: 4px 9px; border-radius: 999px; color: #92400e; background: rgba(254, 243, 199, .9); font-size: .78rem; font-weight: 700; transition: color 240ms ease, background-color 240ms ease; }
+.inflation-hover-readout.favorable .inflation-hover-delta { color: #166534; background: rgba(220, 252, 231, .95); }
+.inflation-hover-readout.adverse .inflation-hover-delta { color: #991b1b; background: rgba(254, 226, 226, .95); }
 .source-panel { margin-top: 14px; padding: 24px; display: grid; grid-template-columns: 260px 1fr; gap: 24px; }
 .source-panel p { margin: 0; line-height: 1.65; color: var(--muted); }
 .source-links { grid-column: 2; display: flex; flex-wrap: wrap; gap: 18px; font-size: .9rem; }
