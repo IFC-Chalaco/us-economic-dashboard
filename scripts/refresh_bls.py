@@ -5,11 +5,13 @@ from __future__ import annotations
 
 import hashlib
 import csv
+import http.client
 import json
 import os
 import ssl
 import subprocess
 import sys
+import time
 import urllib.error
 import urllib.request
 from io import BytesIO
@@ -63,7 +65,18 @@ def ssl_context():
 def request_bytes(url: str, timeout: int = 25) -> bytes:
     if "fred.stlouisfed.org" in url:
         result = subprocess.run(
-            ["curl", "-fsSL", "--max-time", str(timeout), url],
+            [
+                "curl",
+                "-fsSL",
+                "--retry",
+                "3",
+                "--retry-all-errors",
+                "--retry-delay",
+                "2",
+                "--max-time",
+                str(timeout),
+                url,
+            ],
             check=False,
             capture_output=True,
         )
@@ -73,11 +86,17 @@ def request_bytes(url: str, timeout: int = 25) -> bytes:
             f"Official data request failed for {url}: curl exit {result.returncode}"
         )
     request = urllib.request.Request(url, headers={"User-Agent": "us-economic-dashboard/1.0"})
-    try:
-        with urllib.request.urlopen(request, timeout=timeout, context=ssl_context()) as response:
-            return response.read()
-    except (urllib.error.URLError, TimeoutError) as exc:
-        raise RuntimeError(f"Official data request failed for {url}: {exc}") from exc
+    for attempt in range(3):
+        try:
+            with urllib.request.urlopen(request, timeout=timeout, context=ssl_context()) as response:
+                return response.read()
+        except (urllib.error.URLError, TimeoutError, http.client.IncompleteRead) as exc:
+            if attempt == 2:
+                raise RuntimeError(
+                    f"Official data request failed for {url}: {exc}"
+                ) from exc
+            time.sleep(2 ** attempt)
+    raise RuntimeError(f"Official data request failed for {url}")
 
 
 def request_series(series_ids: list[str], start_year: int, end_year: int) -> dict:
@@ -98,11 +117,15 @@ def request_series(series_ids: list[str], start_year: int, end_year: int) -> dic
         headers={"Content-Type": "application/json", "User-Agent": "us-economic-dashboard/1.0"},
         method="POST",
     )
-    try:
-        with urllib.request.urlopen(request, timeout=60, context=ssl_context()) as response:
-            body = json.load(response)
-    except (urllib.error.URLError, TimeoutError) as exc:
-        raise RuntimeError(f"BLS API request failed: {exc}") from exc
+    for attempt in range(3):
+        try:
+            with urllib.request.urlopen(request, timeout=60, context=ssl_context()) as response:
+                body = json.load(response)
+            break
+        except (urllib.error.URLError, TimeoutError, http.client.IncompleteRead) as exc:
+            if attempt == 2:
+                raise RuntimeError(f"BLS API request failed: {exc}") from exc
+            time.sleep(2 ** attempt)
 
     if body.get("status") != "REQUEST_SUCCEEDED":
         raise RuntimeError(f"BLS API error: {body.get('message', 'unknown error')}")
@@ -348,6 +371,7 @@ def stable_hash(payload: dict) -> str:
 
 def main() -> int:
     config = load_json(CONFIG_PATH, {})
+    previous = load_json(OUTPUT_PATH, {})
     definitions = config.get("cpi", []) + config.get("labor", [])
     if not definitions:
         raise RuntimeError("No BLS series configured")
@@ -367,7 +391,12 @@ def main() -> int:
         series.append(normalize_series(raw_by_id.get(definition["id"], {}), definition, "labor"))
 
     fred_definitions = config.get("fred", [])
-    fred_series = []
+    previous_fred = {
+        item["id"]: item
+        for item in previous.get("fred_series", [])
+        if item.get("id") and item.get("observations")
+    }
+    fred_by_id = {}
     fred_errors = []
     for category in ("inflation", "labor", "growth", "markets"):
         definitions = [
@@ -376,26 +405,38 @@ def main() -> int:
             if definition["category"] == category
         ]
         category_start_year = max(start_year, now.year - 5) if category == "markets" else start_year
+        batch_size = 1 if category == "markets" else 7
         batches = [
-            definitions[offset : offset + 7]
-            for offset in range(0, min(len(definitions), 7), 7)
+            definitions[offset : offset + batch_size]
+            for offset in range(0, len(definitions), batch_size)
         ]
-        if len(definitions) > 7:
-            batches.extend([[definition] for definition in definitions[7:]])
         for batch_index, batch in enumerate(batches):
             try:
                 category_series, category_errors = load_fred_bulk(
                     batch, category_start_year
                 )
-                fred_series.extend(category_series)
+                fred_by_id.update(
+                    {item["id"]: item for item in category_series}
+                )
                 fred_errors.extend(category_errors)
             except Exception as exc:
-                fred_errors.append(
-                    {
-                        "id": f"FRED_{category.upper()}_{batch_index + 1}",
-                        "error": str(exc),
-                    }
-                )
+                for definition in batch:
+                    series_id = definition["id"]
+                    if series_id in previous_fred:
+                        fred_by_id[series_id] = previous_fred[series_id]
+                    fred_errors.append(
+                        {
+                            "id": series_id,
+                            "error": str(exc),
+                            "preserved_previous": series_id in previous_fred,
+                        }
+                    )
+
+    fred_series = [
+        fred_by_id[definition["id"]]
+        for definition in fred_definitions
+        if definition["id"] in fred_by_id
+    ]
 
     payload = {
         "source": "U.S. Bureau of Labor Statistics Public Data API",
@@ -406,7 +447,6 @@ def main() -> int:
         "fred_errors": fred_errors,
         "expectations": {"unemployment": load_spf_expectations()},
     }
-    previous = load_json(OUTPUT_PATH, {})
     changed = stable_hash(previous) != stable_hash(payload)
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     if changed:
