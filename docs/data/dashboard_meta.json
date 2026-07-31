@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-30T15:21:23.715382+00:00",
+  "generated_at": "2026-07-31T15:27:31.945369+00:00",
   "data_changed": true,
   "latest_observations": {
     "CUSR0000SA0": "2026-06-01",
@@ -35,7 +35,153 @@
   },
   "series_count": 30,
   "fred_series_count": 29,
-  "fred_errors": [],
+  "fred_errors": [
+    {
+      "id": "PPIFIS",
+      "error": "Official data request failed for https://fred.stlouisfed.org/graph/fredgraph.csv?id=PPIFIS,PCEPI,PCEPILFE,IR&cosd=2017-01-01: curl exit 22",
+      "preserved_previous": true
+    },
+    {
+      "id": "PCEPI",
+      "error": "Official data request failed for https://fred.stlouisfed.org/graph/fredgraph.csv?id=PPIFIS,PCEPI,PCEPILFE,IR&cosd=2017-01-01: curl exit 22",
+      "preserved_previous": true
+    },
+    {
+      "id": "PCEPILFE",
+      "error": "Official data request failed for https://fred.stlouisfed.org/graph/fredgraph.csv?id=PPIFIS,PCEPI,PCEPILFE,IR&cosd=2017-01-01: curl exit 22",
+      "preserved_previous": true
+    },
+    {
+      "id": "IR",
+      "error": "Official data request failed for https://fred.stlouisfed.org/graph/fredgraph.csv?id=PPIFIS,PCEPI,PCEPILFE,IR&cosd=2017-01-01: curl exit 22",
+      "preserved_previous": true
+    },
+    {
+      "id": "JTSJOL",
+      "error": "Official data request failed for https://fred.stlouisfed.org/graph/fredgraph.csv?id=JTSJOL,JTSHIR,JTSQUR,JTSLDL,ECIALLCIV,OPHNFB,ULCNFB&cosd=2017-01-01: curl exit 22",
+      "preserved_previous": true
+    },
+    {
+      "id": "JTSHIR",
+      "error": "Official data request failed for https://fred.stlouisfed.org/graph/fredgraph.csv?id=JTSJOL,JTSHIR,JTSQUR,JTSLDL,ECIALLCIV,OPHNFB,ULCNFB&cosd=2017-01-01: curl exit 22",
+      "preserved_previous": true
+    },
+    {
+      "id": "JTSQUR",
+      "error": "Official data request failed for https://fred.stlouisfed.org/graph/fredgraph.csv?id=JTSJOL,JTSHIR,JTSQUR,JTSLDL,ECIALLCIV,OPHNFB,ULCNFB&cosd=2017-01-01: curl exit 22",
+      "preserved_previous": true
+    },
+    {
+      "id": "JTSLDL",
+      "error": "Official data request failed for https://fred.stlouisfed.org/graph/fredgraph.csv?id=JTSJOL,JTSHIR,JTSQUR,JTSLDL,ECIALLCIV,OPHNFB,ULCNFB&cosd=2017-01-01: curl exit 22",
+      "preserved_previous": true
+    },
+    {
+      "id": "ECIALLCIV",
+      "error": "Official data request failed for https://fred.stlouisfed.org/graph/fredgraph.csv?id=JTSJOL,JTSHIR,JTSQUR,JTSLDL,ECIALLCIV,OPHNFB,ULCNFB&cosd=2017-01-01: curl exit 22",
+      "preserved_previous": true
+    },
+    {
+      "id": "OPHNFB",
+      "error": "Official data request failed for https://fred.stlouisfed.org/graph/fredgraph.csv?id=JTSJOL,JTSHIR,JTSQUR,JTSLDL,ECIALLCIV,OPHNFB,ULCNFB&cosd=2017-01-01: curl exit 22",
+      "preserved_previous": true
+    },
+    {
+      "id": "ULCNFB",
+      "error": "Official data request failed for https://fred.stlouisfed.org/graph/fredgraph.csv?id=JTSJOL,JTSHIR,JTSQUR,JTSLDL,ECIALLCIV,OPHNFB,ULCNFB&cosd=2017-01-01: curl exit 22",
+      "preserved_previous": true
+    },
+    {
+      "id": "ICSA",
+      "error": "Official data request failed for https://fred.stlouisfed.org/graph/fredgraph.csv?id=ICSA&cosd=2017-01-01: curl exit 22",
+      "preserved_previous": true
+    },
+    {
+      "id": "GDP",
+      "error": "Official data request failed for https://fred.stlouisfed.org/graph/fredgraph.csv?id=GDP,RSAFS,INDPRO,DGORDER,HOUST,PERMIT&cosd=2017-01-01: curl exit 22",
+      "preserved_previous": true
+    },
+    {
+      "id": "RSAFS",
+      "error": "Official data request failed for https://fred.stlouisfed.org/graph/fredgraph.csv?id=GDP,RSAFS,INDPRO,DGORDER,HOUST,PERMIT&cosd=2017-01-01: curl exit 22",
+      "preserved_previous": true
+    },
+    {
+      "id": "INDPRO",
+      "error": "Official data request failed for https://fred.stlouisfed.org/graph/fredgraph.csv?id=GDP,RSAFS,INDPRO,DGORDER,HOUST,PERMIT&cosd=2017-01-01: curl exit 22",
+      "preserved_previous": true
+    },
+    {
+      "id": "DGORDER",
+      "error": "Official data request failed for https://fred.stlouisfed.org/graph/fredgraph.csv?id=GDP,RSAFS,INDPRO,DGORDER,HOUST,PERMIT&cosd=2017-01-01: curl exit 22",
+      "preserved_previous": true
+    },
+    {
+      "id": "HOUST",
+      "error": "Official data request failed for https://fred.stlouisfed.org/graph/fredgraph.csv?id=GDP,RSAFS,INDPRO,DGORDER,HOUST,PERMIT&cosd=2017-01-01: curl exit 22",
+      "preserved_previous": true
+    },
+    {
+      "id": "PERMIT",
+      "error": "Official data request failed for https://fred.stlouisfed.org/graph/fredgraph.csv?id=GDP,RSAFS,INDPRO,DGORDER,HOUST,PERMIT&cosd=2017-01-01: curl exit 22",
+      "preserved_previous": true
+    },
+    {
+      "id": "DFF",
+      "error": "Official data request failed for https://fred.stlouisfed.org/graph/fredgraph.csv?id=DFF&cosd=2021-01-01: curl exit 22",
+      "preserved_previous": true
+    },
+    {
+      "id": "DGS2",
+      "error": "Official data request failed for https://fred.stlouisfed.org/graph/fredgraph.csv?id=DGS2&cosd=2021-01-01: curl exit 22",
+      "preserved_previous": true
+    },
+    {
+      "id": "DGS10",
+      "error": "Official data request failed for https://fred.stlouisfed.org/graph/fredgraph.csv?id=DGS10&cosd=2021-01-01: curl exit 22",
+      "preserved_previous": true
+    },
+    {
+      "id": "T10Y2Y",
+      "error": "Official data request failed for https://fred.stlouisfed.org/graph/fredgraph.csv?id=T10Y2Y&cosd=2021-01-01: curl exit 22",
+      "preserved_previous": true
+    },
+    {
+      "id": "BAMLH0A0HYM2",
+      "error": "Official data request failed for https://fred.stlouisfed.org/graph/fredgraph.csv?id=BAMLH0A0HYM2&cosd=2021-01-01: curl exit 22",
+      "preserved_previous": true
+    },
+    {
+      "id": "NFCI",
+      "error": "Official data request failed for https://fred.stlouisfed.org/graph/fredgraph.csv?id=NFCI&cosd=2021-01-01: curl exit 22",
+      "preserved_previous": true
+    },
+    {
+      "id": "DCOILWTICO",
+      "error": "Official data request failed for https://fred.stlouisfed.org/graph/fredgraph.csv?id=DCOILWTICO&cosd=2021-01-01: curl exit 22",
+      "preserved_previous": true
+    },
+    {
+      "id": "SP500",
+      "error": "Official data request failed for https://fred.stlouisfed.org/graph/fredgraph.csv?id=SP500&cosd=2021-01-01: curl exit 22",
+      "preserved_previous": true
+    },
+    {
+      "id": "NASDAQCOM",
+      "error": "Official data request failed for https://fred.stlouisfed.org/graph/fredgraph.csv?id=NASDAQCOM&cosd=2021-01-01: curl exit 22",
+      "preserved_previous": true
+    },
+    {
+      "id": "DJIA",
+      "error": "Official data request failed for https://fred.stlouisfed.org/graph/fredgraph.csv?id=DJIA&cosd=2021-01-01: curl exit 22",
+      "preserved_previous": true
+    },
+    {
+      "id": "VIXCLS",
+      "error": "Official data request failed for https://fred.stlouisfed.org/graph/fredgraph.csv?id=VIXCLS&cosd=2021-01-01: curl exit 22",
+      "preserved_previous": true
+    }
+  ],
   "source": "U.S. Bureau of Labor Statistics Public Data API",
   "source_url": "https://www.bls.gov/developers/",
   "cpi_release_schedule": "https://www.bls.gov/schedule/news_release/cpi.htm",
