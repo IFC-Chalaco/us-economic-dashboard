@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-10T16:58:23.773953+00:00",
+  "generated_at": "2026-09-10T17:43:02.241484+00:00",
   "data_changed": true,
   "latest_observations": {
     "CUSR0000SA0": "2026-07-01",
@@ -35,7 +35,13 @@
   },
   "series_count": 30,
   "fred_series_count": 29,
-  "fred_errors": [],
+  "fred_errors": [
+    {
+      "id": "DJIA",
+      "error": "Official data request failed for https://fred.stlouisfed.org/graph/fredgraph.csv?id=DJIA&cosd=2021-01-01: curl exit 22",
+      "preserved_previous": true
+    }
+  ],
   "source": "U.S. Bureau of Labor Statistics Public Data API",
   "source_url": "https://www.bls.gov/developers/",
   "cpi_release_schedule": "https://www.bls.gov/schedule/news_release/cpi.htm",
