@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-20T17:56:45.370349+00:00",
+  "generated_at": "2026-10-21T17:59:43.508377+00:00",
   "data_changed": true,
   "latest_observations": {
     "CUSR0000SA0": "2026-09-01",
@@ -34,8 +34,125 @@
     "CES9000000001": "2026-09-01"
   },
   "series_count": 30,
-  "fred_series_count": 29,
-  "fred_errors": [],
+  "fred_series_count": 0,
+  "fred_errors": [
+    {
+      "id": "PPIFIS",
+      "error": "No observations returned by FRED"
+    },
+    {
+      "id": "PCEPI",
+      "error": "No observations returned by FRED"
+    },
+    {
+      "id": "PCEPILFE",
+      "error": "No observations returned by FRED"
+    },
+    {
+      "id": "IR",
+      "error": "No observations returned by FRED"
+    },
+    {
+      "id": "JTSJOL",
+      "error": "No observations returned by FRED"
+    },
+    {
+      "id": "JTSHIR",
+      "error": "No observations returned by FRED"
+    },
+    {
+      "id": "JTSQUR",
+      "error": "No observations returned by FRED"
+    },
+    {
+      "id": "JTSLDL",
+      "error": "No observations returned by FRED"
+    },
+    {
+      "id": "ECIALLCIV",
+      "error": "No observations returned by FRED"
+    },
+    {
+      "id": "OPHNFB",
+      "error": "No observations returned by FRED"
+    },
+    {
+      "id": "ULCNFB",
+      "error": "No observations returned by FRED"
+    },
+    {
+      "id": "ICSA",
+      "error": "No observations returned by FRED"
+    },
+    {
+      "id": "GDP",
+      "error": "No observations returned by FRED"
+    },
+    {
+      "id": "RSAFS",
+      "error": "No observations returned by FRED"
+    },
+    {
+      "id": "INDPRO",
+      "error": "No observations returned by FRED"
+    },
+    {
+      "id": "DGORDER",
+      "error": "No observations returned by FRED"
+    },
+    {
+      "id": "HOUST",
+      "error": "No observations returned by FRED"
+    },
+    {
+      "id": "PERMIT",
+      "error": "No observations returned by FRED"
+    },
+    {
+      "id": "DFF",
+      "error": "No observations returned by FRED"
+    },
+    {
+      "id": "DGS2",
+      "error": "No observations returned by FRED"
+    },
+    {
+      "id": "DGS10",
+      "error": "No observations returned by FRED"
+    },
+    {
+      "id": "T10Y2Y",
+      "error": "No observations returned by FRED"
+    },
+    {
+      "id": "BAMLH0A0HYM2",
+      "error": "No observations returned by FRED"
+    },
+    {
+      "id": "NFCI",
+      "error": "No observations returned by FRED"
+    },
+    {
+      "id": "DCOILWTICO",
+      "error": "No observations returned by FRED"
+    },
+    {
+      "id": "SP500",
+      "error": "No observations returned by FRED"
+    },
+    {
+      "id": "NASDAQCOM",
+      "error": "No observations returned by FRED"
+    },
+    {
+      "id": "DJIA",
+      "error": "No observations returned by FRED"
+    },
+    {
+      "id": "VIXCLS",
+      "error": "No observations returned by FRED"
+    }
+  ],
   "source": "U.S. Bureau of Labor Statistics Public Data API",
   "source_url": "https://www.bls.gov/developers/",
   "cpi_release_schedule": "https://www.bls.gov/schedule/news_release/cpi.htm",
